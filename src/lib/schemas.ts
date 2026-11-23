@@ -16,6 +16,7 @@ export const groupFormSchema = z
         z.object({
           id: z.string().max(64).optional(),
           name: z.string().min(2, 'min2').max(50, 'max50'),
+          lineUserId: z.string().min(1).max(255).nullish(),
         }),
       )
       .min(1)

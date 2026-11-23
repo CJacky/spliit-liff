@@ -1,5 +1,6 @@
 'use client'
 
+import { useLiff } from '@/components/liff-provider'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -23,6 +24,7 @@ export const DeleteGroupNotice = () => {
   const locale = useLocale()
   const { toast } = useToast()
   const activeUserId = useActiveUser(groupId)
+  const { profile } = useLiff()
   const { mutateAsync } = trpc.groups.restore.useMutation()
   const utils = trpc.useUtils()
   const [isRestoring, setIsRestoring] = useState(false)
@@ -33,12 +35,18 @@ export const DeleteGroupNotice = () => {
 
   // Past this date the group may be being purged, and cannot be restored.
   const canRestore = group.deleteAt > now
+  const isCreator =
+    !!profile &&
+    !!group.creatorLineUserId &&
+    group.creatorLineUserId === profile.userId
 
   const restore = async () => {
+    if (!profile) return
     setIsRestoring(true)
     try {
       await mutateAsync({
         groupId: group.id,
+        lineUserId: profile.userId,
         participantId: activeUserId ?? undefined,
       })
       await utils.groups.invalidate()
@@ -65,7 +73,14 @@ export const DeleteGroupNotice = () => {
             : t('pastDeadline')}
         </CardDescription>
       </CardHeader>
-      {canRestore && (
+      {canRestore && !isCreator && (
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            只有群組建立者可以還原此群組。
+          </p>
+        </CardContent>
+      )}
+      {canRestore && isCreator && (
         <CardContent>
           <Button
             variant="destructive"

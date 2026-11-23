@@ -20,11 +20,14 @@ export async function createGroup(groupFormValues: GroupFormValues) {
       information: groupFormValues.information,
       currency: groupFormValues.currency,
       currencyCode: groupFormValues.currencyCode,
+      // 建立者是第一位成員（新建群組表單固定綁定目前的 LINE 使用者）。
+      creatorLineUserId: groupFormValues.participants[0]?.lineUserId ?? null,
       participants: {
         createMany: {
-          data: groupFormValues.participants.map(({ name }) => ({
+          data: groupFormValues.participants.map(({ name, lineUserId }) => ({
             id: randomId(),
             name,
+            lineUserId,
           })),
         },
       },
@@ -135,20 +138,33 @@ export async function deleteExpense(
 // group is purged by src/lib/group-deletion.ts.
 const GROUP_DELETION_GRACE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000
 
+export class NotGroupCreatorError extends Error {
+  constructor() {
+    super('Only the group creator can delete or restore this group')
+  }
+}
+
 export async function scheduleGroupDeletion(
   groupId: string,
   groupName: string,
+  lineUserId: string,
   participantId?: string,
 ) {
   // A single conditional update, so that two concurrent requests cannot both
   // succeed, nor push the deletion date back.
   const { count } = await prisma.group.updateMany({
-    where: { id: groupId, name: groupName, deleteAt: null },
+    where: {
+      id: groupId,
+      name: groupName,
+      deleteAt: null,
+      creatorLineUserId: lineUserId,
+    },
     data: { deleteAt: new Date(Date.now() + GROUP_DELETION_GRACE_PERIOD_MS) },
   })
   if (count === 0) {
     const group = await getGroup(groupId)
     if (!group) throw new Error('Invalid group ID')
+    if (group.creatorLineUserId !== lineUserId) throw new NotGroupCreatorError()
     if (group.deleteAt)
       throw new Error('Group is already scheduled for deletion')
     throw new Error('Group name does not match')
@@ -159,17 +175,29 @@ export async function scheduleGroupDeletion(
   })
 }
 
-export async function restoreGroup(groupId: string, participantId?: string) {
+export async function restoreGroup(
+  groupId: string,
+  lineUserId: string,
+  participantId?: string,
+) {
   // Once its deletion date has passed, the group may be being purged: it can
   // no longer be restored.
   const { count } = await prisma.group.updateMany({
-    where: { id: groupId, deleteAt: { gt: new Date() } },
+    where: {
+      id: groupId,
+      deleteAt: { gt: new Date() },
+      creatorLineUserId: lineUserId,
+    },
     data: { deleteAt: null },
   })
-  if (count === 0)
+  if (count === 0) {
+    const group = await getGroup(groupId)
+    if (group && group.creatorLineUserId !== lineUserId)
+      throw new NotGroupCreatorError()
     throw new Error(
       'Group is not scheduled for deletion, or can no longer be restored',
     )
+  }
 
   await logActivity(groupId, ActivityType.RESTORE_GROUP, { participantId })
 }
@@ -194,6 +222,15 @@ export async function getGroupExpensesParticipants(groupId: string) {
       ...paidFor.map((row) => row.participantId),
     ]),
   )
+}
+
+/** 目前 LINE 使用者有綁定成員的所有群組（「我的群組」以資料庫為準）。 */
+export async function getGroupsForLineUser(lineUserId: string) {
+  return prisma.group.findMany({
+    where: { participants: { some: { lineUserId } } },
+    select: { id: true, name: true },
+    orderBy: { createdAt: 'desc' },
+  })
 }
 
 export async function getGroups(groupIds: string[]) {
@@ -362,6 +399,13 @@ export async function updateGroup(
   const existingGroup = await getGroup(groupId)
   if (!existingGroup) throw new Error('Invalid group ID')
 
+  const removedParticipants = existingGroup.participants.filter(
+    (p) => !groupFormValues.participants.some((p2) => p2.id === p.id),
+  )
+  if (removedParticipants.some((p) => p.lineUserId)) {
+    throw new Error('Participants linked to a LINE account cannot be removed')
+  }
+
   await logActivity(groupId, ActivityType.UPDATE_GROUP, { participantId })
 
   return prisma.group.update({
@@ -372,16 +416,14 @@ export async function updateGroup(
       currency: groupFormValues.currency,
       currencyCode: groupFormValues.currencyCode,
       participants: {
-        deleteMany: existingGroup.participants.filter(
-          (p) => !groupFormValues.participants.some((p2) => p2.id === p.id),
-        ),
+        deleteMany: removedParticipants.map(({ id }) => ({ id })),
         updateMany: groupFormValues.participants
           .filter((participant) => participant.id !== undefined)
           .map((participant) => ({
             where: { id: participant.id },
-            data: {
-              name: participant.name,
-            },
+            // LINE 綁定只能透過 claim/createLineParticipant 建立，
+            // 編輯群組不能修改或解除。
+            data: { name: participant.name },
           })),
         createMany: {
           data: groupFormValues.participants
@@ -400,6 +442,60 @@ export async function getGroup(groupId: string) {
   return prisma.group.findUnique({
     where: { id: groupId },
     include: { participants: true },
+  })
+}
+
+export async function claimParticipantForLineUser(
+  groupId: string,
+  participantId: string,
+  lineUserId: string,
+) {
+  const existingBinding = await prisma.participant.findFirst({
+    where: { groupId, lineUserId },
+    select: { id: true },
+  })
+  if (existingBinding && existingBinding.id !== participantId) {
+    throw new Error(
+      'This LINE account is already linked to another participant',
+    )
+  }
+
+  const { count } = await prisma.participant.updateMany({
+    where: {
+      id: participantId,
+      groupId,
+      OR: [{ lineUserId: null }, { lineUserId }],
+    },
+    data: { lineUserId },
+  })
+  if (count === 0) {
+    throw new Error('Participant was not found or is already linked')
+  }
+
+  return prisma.participant.findUniqueOrThrow({ where: { id: participantId } })
+}
+
+export async function createParticipantForLineUser(
+  groupId: string,
+  name: string,
+  lineUserId: string,
+) {
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    select: { id: true },
+  })
+  if (!group) throw new Error('Invalid group ID')
+
+  const existingBinding = await prisma.participant.findFirst({
+    where: { groupId, lineUserId },
+    select: { id: true },
+  })
+  if (existingBinding) {
+    throw new Error('This LINE account is already linked in this group')
+  }
+
+  return prisma.participant.create({
+    data: { id: randomId(), groupId, name, lineUserId },
   })
 }
 

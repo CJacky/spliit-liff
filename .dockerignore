@@ -26,3 +26,11 @@ blob-report
 *.tsbuildinfo
 .DS_Store
 npm-debug.log*
+
+# PC 打包用檔案（build.sh），不需要進映像檔
+build.sh
+docker-compose.yml
+load.sh
+pgdata
+.*.tar.gz.tmp.*
+*.tar.gz

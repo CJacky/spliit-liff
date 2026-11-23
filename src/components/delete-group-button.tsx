@@ -1,5 +1,6 @@
 'use client'
 
+import { useLiff } from '@/components/liff-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -26,6 +27,7 @@ export function DeleteGroupButton({ group }: Props) {
   const t = useTranslations('DeleteGroupButton')
   const { toast } = useToast()
   const activeUserId = useActiveUser(group.id)
+  const { profile } = useLiff()
   const [inputValue, setInputValue] = useState('')
   // Covers the redirect as well as the mutation.
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -46,12 +48,13 @@ export function DeleteGroupButton({ group }: Props) {
             // The popover is portaled out of the group form in the DOM, but
             // React still bubbles the submit event up to it.
             event.stopPropagation()
-            if (isSubmitting || inputValue !== group.name) return
+            if (isSubmitting || inputValue !== group.name || !profile) return
             setIsSubmitting(true)
             try {
               await mutateAsync({
                 groupId: group.id,
                 groupName: inputValue,
+                lineUserId: profile.userId,
                 participantId: activeUserId ?? undefined,
               })
             } catch {

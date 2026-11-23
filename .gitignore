@@ -51,3 +51,11 @@ postgres-data
 
 # performance suite output (perf/run.ts)
 /perf-report.json
+
+# build.sh 打包暫存檔 / 本機資料庫
+.*.tar.gz.tmp.*
+*.tar.gz
+/pgdata
+
+# 含正式環境 secret（CRON_SECRET 等），不進版控
+/docker-compose.yml

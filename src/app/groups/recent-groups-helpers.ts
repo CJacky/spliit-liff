@@ -34,6 +34,26 @@ export function saveRecentGroup(group: RecentGroup) {
   )
 }
 
+/**
+ * 把資料庫查到的「我的群組」併入本機列表：已存在的更新名稱，
+ * 沒有的加到最後面（不打亂使用者最近開啟的順序）。
+ */
+export function mergeRecentGroups(groups: RecentGroups) {
+  const recentGroups = getRecentGroups()
+  const names = new Map(groups.map((group) => [group.id, group.name]))
+  const known = new Set(recentGroups.map((group) => group.id))
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify([
+      ...recentGroups.map((group) => ({
+        ...group,
+        name: names.get(group.id) ?? group.name,
+      })),
+      ...groups.filter((group) => !known.has(group.id)),
+    ]),
+  )
+}
+
 export function deleteRecentGroup(group: RecentGroup) {
   const recentGroups = getRecentGroups()
   localStorage.setItem(

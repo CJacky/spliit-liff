@@ -1,5 +1,6 @@
 'use client'
 
+import { useLiff } from '@/components/liff-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/drawer'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { useMediaQuery } from '@/lib/hooks'
+import { setActiveUserForGroup, useMediaQuery } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/trpc/client'
 import { AppRouterOutput } from '@/trpc/routers/_app'
@@ -29,25 +30,26 @@ export function ActiveUserModal({ groupId }: { groupId: string }) {
   const t = useTranslations('Expenses.ActiveUserModal')
   const [open, setOpen] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 768px)')
+  const { isReady, profile } = useLiff()
   const { data: groupData } = trpc.groups.get.useQuery({ groupId })
 
   const group = groupData?.group
 
   useEffect(() => {
-    if (!group) return
+    if (!group || !isReady || profile) return
 
     const tempUser = localStorage.getItem(`newGroup-activeUser`)
     const activeUser = localStorage.getItem(`${group.id}-activeUser`)
     if (!tempUser && !activeUser) {
       setOpen(true)
     }
-  }, [group])
+  }, [group, isReady, profile])
 
   function updateOpen(open: boolean) {
     if (!group) return
 
     if (!open && !localStorage.getItem(`${group.id}-activeUser`)) {
-      localStorage.setItem(`${group.id}-activeUser`, 'None')
+      setActiveUserForGroup(group.id, 'None')
     }
     setOpen(open)
   }
@@ -111,7 +113,7 @@ function ActiveUserForm({
         if (!group) return
 
         event.preventDefault()
-        localStorage.setItem(`${group.id}-activeUser`, selected)
+        setActiveUserForGroup(group.id, selected)
         close()
       }}
     >

@@ -1,10 +1,13 @@
 import { createTRPCRouter } from '@/trpc/init'
 import { activitiesRouter } from '@/trpc/routers/groups/activities'
 import { groupBalancesRouter } from '@/trpc/routers/groups/balances'
+import { claimLineParticipantProcedure } from '@/trpc/routers/groups/claim-line-participant.procedure'
+import { createLineParticipantProcedure } from '@/trpc/routers/groups/create-line-participant.procedure'
 import { createGroupProcedure } from '@/trpc/routers/groups/create.procedure'
 import { deleteGroupProcedure } from '@/trpc/routers/groups/delete.procedure'
 import { groupExpensesRouter } from '@/trpc/routers/groups/expenses'
 import { getGroupProcedure } from '@/trpc/routers/groups/get.procedure'
+import { listMyGroupsProcedure } from '@/trpc/routers/groups/list-mine.procedure'
 import { restoreGroupProcedure } from '@/trpc/routers/groups/restore.procedure'
 import { groupStatsRouter } from '@/trpc/routers/groups/stats'
 import { updateGroupProcedure } from '@/trpc/routers/groups/update.procedure'
@@ -20,7 +23,10 @@ export const groupsRouter = createTRPCRouter({
   get: getGroupProcedure,
   getDetails: getGroupDetailsProcedure,
   list: listGroupsProcedure,
+  listMine: listMyGroupsProcedure,
   create: createGroupProcedure,
+  claimLineParticipant: claimLineParticipantProcedure,
+  createLineParticipant: createLineParticipantProcedure,
   update: updateGroupProcedure,
   delete: deleteGroupProcedure,
   restore: restoreGroupProcedure,

@@ -27,12 +27,15 @@ export function RecentGroupListCard({
   groupDetail,
   isStarred,
   isArchived,
+  isMember,
   refreshGroupsFromStorage,
 }: {
   group: RecentGroup
   groupDetail?: AppRouterOutput['groups']['list']['groups'][number]
   isStarred: boolean
   isArchived: boolean
+  /** 已綁定 LINE 的群組會從資料庫自動加回列表，移除沒有意義，改用封存。 */
+  isMember: boolean
   refreshGroupsFromStorage: () => void
 }) {
   const router = useRouter()
@@ -92,21 +95,23 @@ export function RecentGroupListCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        deleteRecentGroup(group)
-                        refreshGroupsFromStorage()
+                    {!isMember && (
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          deleteRecentGroup(group)
+                          refreshGroupsFromStorage()
 
-                        toast.toast({
-                          title: t('RecentRemovedToast.title'),
-                          description: t('RecentRemovedToast.description'),
-                        })
-                      }}
-                    >
-                      {t('removeRecent')}
-                    </DropdownMenuItem>
+                          toast.toast({
+                            title: t('RecentRemovedToast.title'),
+                            description: t('RecentRemovedToast.description'),
+                          })
+                        }}
+                      >
+                        {t('removeRecent')}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={(event) => {
                         event.stopPropagation()

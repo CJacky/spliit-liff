@@ -11,7 +11,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Group } from '@/generated/prisma/browser'
-import { useBaseUrl } from '@/lib/hooks'
 import { Share } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -21,8 +20,7 @@ type Props = {
 
 export function ShareButton({ group }: Props) {
   const t = useTranslations('Share')
-  const baseUrl = useBaseUrl()
-  const url = baseUrl && `${baseUrl}/groups/${group.id}/expenses?ref=share`
+  const url = `https://liff.line.me/2012765573-U3h3wIyL/groups/${group.id}`
 
   return (
     <Popover>
@@ -33,18 +31,16 @@ export function ShareButton({ group }: Props) {
       </PopoverTrigger>
       <PopoverContent align="end" className="[&_p]:text-sm flex flex-col gap-3">
         <p>{t('description')}</p>
-        {url && (
-          <div className="flex gap-2">
-            <Input className="flex-1" defaultValue={url} readOnly />
-            <CopyButton text={url} title={t('copyLink')} />
-            <ShareUrlButton
-              text={`Join my group ${group.name} on Spliit`}
-              url={url}
-              title={t('shareLink')}
-            />
-            <ShareQrCodeDialog url={url} groupName={group.name} />
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Input className="flex-1" defaultValue={url} readOnly />
+          <CopyButton text={url} title={t('copyLink')} />
+          <ShareUrlButton
+            text={`Join my group ${group.name} on Spliit`}
+            url={url}
+            title={t('shareLink')}
+          />
+          <ShareQrCodeDialog url={url} groupName={group.name} />
+        </div>
         <p>
           <strong>{t('warning')}</strong> {t('warningHelp')}
         </p>

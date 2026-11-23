@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { PropsWithChildren, useEffect } from 'react'
 import { CurrentGroupProvider } from './current-group-context'
 import { GroupHeader } from './group-header'
+import { LineParticipantDialog } from './line-participant-dialog'
 import { SaveGroupLocally } from './save-recent-group'
 
 export function GroupLayoutClient({
@@ -42,6 +43,7 @@ export function GroupLayoutClient({
 
   return (
     <CurrentGroupProvider {...props}>
+      <LineParticipantDialog />
       <GroupHeader />
       <DeleteGroupNotice />
       {children}

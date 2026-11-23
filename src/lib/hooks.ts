@@ -57,13 +57,23 @@ export function useActiveUser(groupId?: string) {
   const [activeUser, setActiveUser] = useState<string | null>(null)
 
   useEffect(() => {
-    if (groupId) {
-      const activeUser = localStorage.getItem(`${groupId}-activeUser`)
-      if (activeUser) setActiveUser(activeUser)
-    }
+    if (!groupId) return
+
+    const storageKey = `${groupId}-activeUser`
+    const updateActiveUser = () =>
+      setActiveUser(localStorage.getItem(storageKey))
+    updateActiveUser()
+    window.addEventListener('spliit:active-user-changed', updateActiveUser)
+    return () =>
+      window.removeEventListener('spliit:active-user-changed', updateActiveUser)
   }, [groupId])
 
   return activeUser
+}
+
+export function setActiveUserForGroup(groupId: string, participantId: string) {
+  localStorage.setItem(`${groupId}-activeUser`, participantId)
+  window.dispatchEvent(new Event('spliit:active-user-changed'))
 }
 
 // One entry per quoted currency. The v2 API sends back the requested date when

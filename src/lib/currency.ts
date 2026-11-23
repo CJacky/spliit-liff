@@ -127,6 +127,15 @@ export const supportedCurrencyCodes = [
 ] as const
 export type supportedCurrencyCodeType = (typeof supportedCurrencyCodes)[number]
 
+const zhTwCurrencyNames = new Intl.DisplayNames(['zh-TW'], { type: 'currency' })
+
+function localizeCurrencyName(currency: Currency, locale: Locale): Currency {
+  if (locale !== 'zh-TW' || !currency.code) return currency
+
+  const name = zhTwCurrencyNames.of(currency.code)
+  return name ? { ...currency, name } : currency
+}
+
 export function defaultCurrencyList(
   locale: Locale = 'en-US',
   customChoice: string | null = null,
@@ -145,7 +154,9 @@ export function defaultCurrencyList(
       ]
     : []
   const allCurrencies = currencyList[locale]
-  return currencies.concat(Object.values(allCurrencies))
+  return currencies
+    .concat(Object.values(allCurrencies))
+    .map((currency) => localizeCurrencyName(currency, locale))
 }
 
 export function getCurrency(
@@ -164,8 +175,8 @@ export function getCurrency(
   }
   if (!currencyCode || currencyCode === '') return defaultCurrency
   const currencyListInLocale = currencyList[locale] ?? currencyList['en-US']
-  return (
+  const currency =
     currencyListInLocale[currencyCode as supportedCurrencyCodeType] ??
     defaultCurrency
-  )
+  return localizeCurrencyName(currency, locale)
 }

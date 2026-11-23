@@ -108,6 +108,7 @@ function CurrencyCommand({
       case 'JPY':
       case 'GBP':
       case 'CNY':
+      case 'TWD':
         return 'common'
       default:
         if (currency.code === '') return 'custom'

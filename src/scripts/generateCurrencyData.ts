@@ -36,6 +36,11 @@ const currencyList = locales.reduce((curList, locale) => {
   }
 }
 
+const zhTwCurrencyNames = new Intl.DisplayNames(['zh-TW'], { type: 'currency' })
+for (const currency of Object.values(currencyList['zh-TW'])) {
+  currency.name = zhTwCurrencyNames.of(currency.code) ?? currency.name
+}
+
 fs.writeFileSync(
   'src/lib/currency-data.json',
   JSON.stringify(currencyList, null, 2) + '\n',

@@ -6,8 +6,10 @@ import {
   getArchivedGroups,
   getRecentGroups,
   getStarredGroups,
+  mergeRecentGroups,
   RecentGroups,
 } from '@/app/groups/recent-groups-helpers'
+import { useLiff } from '@/components/liff-provider'
 import { Button } from '@/components/ui/button'
 import { getGroups } from '@/lib/api'
 import { MAX_GROUPS_PER_QUERY } from '@/lib/group-query-limits'
@@ -72,6 +74,16 @@ function sortGroups({
 
 export function RecentGroupList() {
   const [state, setState] = useState<RecentGroupsState>({ status: 'pending' })
+  const { profile } = useLiff()
+  // 「我的群組」以資料庫為準：綁定目前 LINE 帳號的群組，換裝置也看得到。
+  const myGroups = trpc.groups.listMine.useQuery(
+    { lineUserId: profile?.userId ?? '' },
+    { enabled: !!profile },
+  )
+  const myGroupIds = useMemo(
+    () => new Set(myGroups.data?.groups.map((group) => group.id)),
+    [myGroups.data],
+  )
 
   const loadGroups = useCallback(() => {
     const groupsInStorage = getRecentGroups()
@@ -86,8 +98,10 @@ export function RecentGroupList() {
   }, [])
 
   useEffect(() => {
-    loadGroups()
-  }, [loadGroups])
+    if (myGroups.data) mergeRecentGroups(myGroups.data.groups)
+    // 查詢失敗時仍顯示本機列表，不擋住使用者。
+    if (myGroups.data || myGroups.isError || !profile) loadGroups()
+  }, [loadGroups, myGroups.data, myGroups.isError, profile])
 
   if (state.status === 'pending') return null
 
@@ -96,6 +110,7 @@ export function RecentGroupList() {
       groups={state.groups}
       starredGroups={state.starredGroups}
       archivedGroups={state.archivedGroups}
+      memberGroupIds={myGroupIds}
       refreshGroupsFromStorage={loadGroups}
     />
   )
@@ -105,11 +120,13 @@ function RecentGroupList_({
   groups,
   starredGroups,
   archivedGroups,
+  memberGroupIds,
   refreshGroupsFromStorage,
 }: {
   groups: RecentGroups
   starredGroups: string[]
   archivedGroups: string[]
+  memberGroupIds: Set<string>
   refreshGroupsFromStorage: () => void
 }) {
   const t = useTranslations('Groups')
@@ -190,6 +207,7 @@ function RecentGroupList_({
             groupDetails={data.groups}
             archivedGroups={archivedGroups}
             starredGroups={starredGroups}
+            memberGroupIds={memberGroupIds}
             refreshGroupsFromStorage={refreshGroupsFromStorage}
           />
         </>
@@ -203,6 +221,7 @@ function RecentGroupList_({
             groupDetails={data.groups}
             archivedGroups={archivedGroups}
             starredGroups={starredGroups}
+            memberGroupIds={memberGroupIds}
             refreshGroupsFromStorage={refreshGroupsFromStorage}
           />
         </>
@@ -217,6 +236,7 @@ function RecentGroupList_({
               groupDetails={data.groups}
               archivedGroups={archivedGroups}
               starredGroups={starredGroups}
+              memberGroupIds={memberGroupIds}
               refreshGroupsFromStorage={refreshGroupsFromStorage}
             />
           </div>
@@ -231,12 +251,14 @@ function GroupList({
   groupDetails,
   starredGroups,
   archivedGroups,
+  memberGroupIds,
   refreshGroupsFromStorage,
 }: {
   groups: RecentGroups
   groupDetails?: AppRouterOutput['groups']['list']['groups']
   starredGroups: string[]
   archivedGroups: string[]
+  memberGroupIds: Set<string>
   refreshGroupsFromStorage: () => void
 }) {
   return (
@@ -250,6 +272,7 @@ function GroupList({
           )}
           isStarred={starredGroups.includes(group.id)}
           isArchived={archivedGroups.includes(group.id)}
+          isMember={memberGroupIds.has(group.id)}
           refreshGroupsFromStorage={refreshGroupsFromStorage}
         />
       ))}

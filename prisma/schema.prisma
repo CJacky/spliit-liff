@@ -14,25 +14,30 @@ datasource db {
 }
 
 model Group {
-  id           String        @id
-  name         String
-  information  String?       @db.Text
-  currency     String        @default("$")
-  currencyCode String?
-  participants Participant[]
-  expenses     Expense[]
-  activities   Activity[]
-  createdAt    DateTime      @default(now())
-  deleteAt     DateTime?
+  id                String        @id
+  name              String
+  information       String?       @db.Text
+  currency          String        @default("$")
+  currencyCode      String?
+  participants      Participant[]
+  expenses          Expense[]
+  activities        Activity[]
+  createdAt         DateTime      @default(now())
+  deleteAt          DateTime?
+  // 建立者的 LINE userId；只有建立者可以刪除／還原群組。
+  creatorLineUserId String?
 }
 
 model Participant {
-  id              String           @id
+  id              String           @id @default(cuid())
   name            String
+  lineUserId      String?
   group           Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId         String
   expensesPaidBy  Expense[]
   expensesPaidFor ExpensePaidFor[]
+
+  @@unique([groupId, lineUserId])
 }
 
 model Category {

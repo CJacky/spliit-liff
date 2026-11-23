@@ -1,4 +1,5 @@
 import { DeleteGroupButton } from '@/components/delete-group-button'
+import { useLiff } from '@/components/liff-provider'
 import { SubmitButton } from '@/components/submit-button'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,6 +36,7 @@ import { Locale } from '@/i18n/request'
 import { useAnalytics } from '@/lib/analytics/context'
 import { getGroup } from '@/lib/api'
 import { defaultCurrencyList, getCurrency } from '@/lib/currency'
+import { setActiveUserForGroup, useActiveUser } from '@/lib/hooks'
 import {
   GROUP_INFORMATION_MAX,
   groupFormSchema,
@@ -71,6 +73,7 @@ export function GroupForm({
 }: Props) {
   const locale = useLocale()
   const t = useTranslations('GroupForm')
+  const { profile } = useLiff()
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(groupFormSchema),
     defaultValues: group
@@ -86,10 +89,12 @@ export function GroupForm({
           information: '',
           currency: '',
           currencyCode: defaultCurrencyCode, // TODO: derive from the locale when not configured
+          // 建立者固定為第一位成員，並綁定目前的 LINE 帳號。
           participants: [
-            { name: t('Participants.John') },
-            { name: t('Participants.Jane') },
-            { name: t('Participants.Jack') },
+            {
+              name: profile?.displayName ?? '',
+              lineUserId: profile?.userId,
+            },
           ],
         },
   })
@@ -99,8 +104,18 @@ export function GroupForm({
     keyName: 'key',
   })
   const sendEvent = useAnalytics()
+  const storedActiveUserId = useActiveUser(group?.id)
 
   const [activeUser, setActiveUser] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!group || storedActiveUserId === null) return
+    setActiveUser(
+      group.participants.find(({ id }) => id === storedActiveUserId)?.name ??
+        t('Settings.ActiveUserField.none'),
+    )
+  }, [group, storedActiveUserId, t])
+
   useEffect(() => {
     if (activeUser === null) {
       const currentActiveUser =
@@ -116,12 +131,16 @@ export function GroupForm({
     if (group?.id) {
       const participant = group.participants.find((p) => p.name === activeUser)
       if (participant?.id) {
-        localStorage.setItem(`${group.id}-activeUser`, participant.id)
+        setActiveUserForGroup(group.id, participant.id)
       } else {
-        localStorage.setItem(`${group.id}-activeUser`, activeUser)
+        setActiveUserForGroup(group.id, activeUser)
       }
     } else {
-      localStorage.setItem('newGroup-activeUser', activeUser)
+      // 新建群組時，目前使用者一律是綁定 LINE 的建立者。
+      localStorage.setItem(
+        'newGroup-activeUser',
+        form.getValues('participants.0.name'),
+      )
     }
   }
 
@@ -137,8 +156,20 @@ export function GroupForm({
           } else {
             sendEvent({ event: 'group: create', props: {} }, `/groups`)
           }
+          const submittedValues =
+            !group && profile
+              ? {
+                  ...values,
+                  participants: values.participants.map((participant, index) =>
+                    index === 0
+                      ? { ...participant, lineUserId: profile.userId }
+                      : participant,
+                  ),
+                }
+              : values
+
           await onSubmit(
-            values,
+            submittedValues,
             group?.participants.find((p) => p.name === activeUser)?.id ??
               undefined,
           )
@@ -279,8 +310,27 @@ export function GroupForm({
                               {...field}
                               placeholder={t('Participants.new')}
                             />
-                            {item.id &&
-                            protectedParticipantIds.includes(item.id) ? (
+                            {item.lineUserId ? (
+                              <HoverCard>
+                                <HoverCardTrigger>
+                                  <Button
+                                    variant="ghost"
+                                    type="button"
+                                    size="icon"
+                                    disabled
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive opacity-50" />
+                                  </Button>
+                                </HoverCardTrigger>
+                                <HoverCardContent
+                                  align="end"
+                                  className="text-sm"
+                                >
+                                  此成員已綁定 LINE 帳號，無法刪除。
+                                </HoverCardContent>
+                              </HoverCard>
+                            ) : item.id &&
+                              protectedParticipantIds.includes(item.id) ? (
                               <HoverCard>
                                 <HoverCardTrigger>
                                   <Button
@@ -334,52 +384,55 @@ export function GroupForm({
           </CardFooter>
         </Card>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>{t('Settings.title')}</CardTitle>
-            <CardDescription>{t('Settings.description')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {activeUser !== null && (
-                <FormItem>
-                  <FormLabel>{t('Settings.ActiveUserField.label')}</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={(value) => {
-                        setActiveUser(value)
-                      }}
-                      defaultValue={activeUser}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t(
-                            'Settings.ActiveUserField.placeholder',
-                          )}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          { name: t('Settings.ActiveUserField.none') },
-                          ...form.watch('participants'),
-                        ]
-                          .filter((item) => item.name.length > 0)
-                          .map(({ name }) => (
-                            <SelectItem key={name} value={name}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormDescription>
-                    {t('Settings.ActiveUserField.description')}
-                  </FormDescription>
-                </FormItem>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* 新建群組時目前使用者固定為綁定 LINE 的建立者，不顯示此設定。 */}
+        {group && (
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>{t('Settings.title')}</CardTitle>
+              <CardDescription>{t('Settings.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {activeUser !== null && (
+                  <FormItem>
+                    <FormLabel>{t('Settings.ActiveUserField.label')}</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(value) => {
+                          setActiveUser(value)
+                        }}
+                        defaultValue={activeUser}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t(
+                              'Settings.ActiveUserField.placeholder',
+                            )}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[
+                            { name: t('Settings.ActiveUserField.none') },
+                            ...form.watch('participants'),
+                          ]
+                            .filter((item) => item.name.length > 0)
+                            .map(({ name }) => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormDescription>
+                      {t('Settings.ActiveUserField.description')}
+                    </FormDescription>
+                  </FormItem>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <div className="flex mt-4 gap-2">
           <SubmitButton
             loadingContent={t(group ? 'Settings.saving' : 'Settings.creating')}
@@ -395,19 +448,24 @@ export function GroupForm({
           )}
         </div>
 
-        {enableGroupDeletion && group && !group.deleteAt && (
-          <Card className="mt-8 border-red-700">
-            <CardHeader>
-              <CardTitle className="text-red-700">
-                {t('Delete.title')}
-              </CardTitle>
-              <CardDescription>{t('Delete.description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DeleteGroupButton group={group} />
-            </CardContent>
-          </Card>
-        )}
+        {/* 只有建立者（creatorLineUserId）可以刪除群組。 */}
+        {enableGroupDeletion &&
+          group &&
+          !group.deleteAt &&
+          !!profile &&
+          group.creatorLineUserId === profile.userId && (
+            <Card className="mt-8 border-red-700">
+              <CardHeader>
+                <CardTitle className="text-red-700">
+                  {t('Delete.title')}
+                </CardTitle>
+                <CardDescription>{t('Delete.description')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DeleteGroupButton group={group} />
+              </CardContent>
+            </Card>
+          )}
       </form>
     </Form>
   )
