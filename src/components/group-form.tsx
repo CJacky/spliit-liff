@@ -89,7 +89,7 @@ export function GroupForm({
           information: '',
           currency: '',
           currencyCode: defaultCurrencyCode, // TODO: derive from the locale when not configured
-          // 建立者固定為第一位成員，並綁定目前的 LINE 帳號。
+          // The creator is always the first participant, linked to the current LINE account.
           participants: [
             {
               name: profile?.displayName ?? '',
@@ -136,7 +136,7 @@ export function GroupForm({
         setActiveUserForGroup(group.id, activeUser)
       }
     } else {
-      // 新建群組時，目前使用者一律是綁定 LINE 的建立者。
+      // When creating a group, the current user is always the LINE-linked creator.
       localStorage.setItem(
         'newGroup-activeUser',
         form.getValues('participants.0.name'),
@@ -384,7 +384,7 @@ export function GroupForm({
           </CardFooter>
         </Card>
 
-        {/* 新建群組時目前使用者固定為綁定 LINE 的建立者，不顯示此設定。 */}
+        {/* When creating a group the current user is always the LINE-linked creator, so hide this setting. */}
         {group && (
           <Card className="mb-4">
             <CardHeader>
@@ -448,7 +448,7 @@ export function GroupForm({
           )}
         </div>
 
-        {/* 只有建立者（creatorLineUserId）可以刪除群組。 */}
+        {/* Only the creator (creatorLineUserId) can delete the group. */}
         {enableGroupDeletion &&
           group &&
           !group.deleteAt &&

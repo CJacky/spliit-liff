@@ -2,10 +2,10 @@
 
 set -Eeuo pipefail
 
-# 在 NAS 上執行：載入 build.sh 產生的映像檔並重新啟動服務。
+# Run on the NAS: load the image produced by build.sh and restart the services.
 #   sudo ./load.sh
 #
-# 可選設定（環境變數，需與 build.sh 一致）：
+# Optional settings (environment variables, must match build.sh):
 #   IMAGE_NAME=spliit-local
 #   IMAGE_TAG=latest
 
@@ -21,7 +21,7 @@ fail() {
   exit 1
 }
 
-# Synology 的 docker 在 /usr/local/bin，sudo 的 secure_path 常常不包含它。
+# Synology's docker lives in /usr/local/bin, which sudo's secure_path often omits.
 export PATH="/usr/local/bin:/usr/bin:/bin:${PATH}"
 
 if [[ ${EUID} -ne 0 ]]; then
@@ -31,7 +31,7 @@ fi
 
 command -v docker >/dev/null 2>&1 || fail "找不到 docker 指令"
 
-# DSM Container Manager 可能只有 docker-compose（無 docker compose 外掛）。
+# DSM Container Manager may only ship docker-compose (no docker compose plugin).
 if docker compose version >/dev/null 2>&1; then
   compose=(docker compose)
 elif command -v docker-compose >/dev/null 2>&1; then

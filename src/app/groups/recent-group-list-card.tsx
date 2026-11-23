@@ -34,7 +34,7 @@ export function RecentGroupListCard({
   groupDetail?: AppRouterOutput['groups']['list']['groups'][number]
   isStarred: boolean
   isArchived: boolean
-  /** 已綁定 LINE 的群組會從資料庫自動加回列表，移除沒有意義，改用封存。 */
+  /** Groups linked to LINE are re-added from the database automatically, so removing is pointless; archive instead. */
   isMember: boolean
   refreshGroupsFromStorage: () => void
 }) {

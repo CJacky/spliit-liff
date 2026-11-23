@@ -24,7 +24,7 @@ model Group {
   activities        Activity[]
   createdAt         DateTime      @default(now())
   deleteAt          DateTime?
-  // 建立者的 LINE userId；只有建立者可以刪除／還原群組。
+  // LINE userId of the creator; only the creator can delete/restore the group.
   creatorLineUserId String?
 }
 

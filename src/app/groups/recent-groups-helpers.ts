@@ -35,8 +35,8 @@ export function saveRecentGroup(group: RecentGroup) {
 }
 
 /**
- * 把資料庫查到的「我的群組」併入本機列表：已存在的更新名稱，
- * 沒有的加到最後面（不打亂使用者最近開啟的順序）。
+ * Merge "my groups" from the database into the local list: update names of existing
+ * entries and append missing ones (preserving the user's recently-opened order).
  */
 export function mergeRecentGroups(groups: RecentGroups) {
   const recentGroups = getRecentGroups()

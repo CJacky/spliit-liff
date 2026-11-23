@@ -32,9 +32,9 @@ const LiffContext = createContext<LiffContextValue | null>(null)
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || '2012765573-U3h3wIyL'
 
 /**
- * 強制 LINE 登入：未登入時一律導向 LINE Login（LINE App 內外皆同），
- * 拿到 LINE userId / displayName 之前不渲染任何頁面內容，
- * 所以底下的元件可以假設 profile 一定存在。
+ * Enforce LINE login: when logged out, always redirect to LINE Login (inside or outside the LINE app).
+ * Nothing is rendered until the LINE userId / displayName is available,
+ * so descendant components can assume the profile always exists.
  */
 export function LiffProvider({ children }: PropsWithChildren) {
   const [value, setValue] = useState<LiffContextValue>({
@@ -43,8 +43,8 @@ export function LiffProvider({ children }: PropsWithChildren) {
     profile: null,
     error: null,
   })
-  // 使用者在 LINE 登入頁按取消時會帶 ?error=... 回來，此時不要再自動導向，
-  // 否則會無限循環；改顯示「使用 LINE 登入」按鈕讓使用者自己按。
+  // If the user cancels on the LINE login page they come back with ?error=...; don't auto-redirect
+  // again or we loop forever. Show a "log in with LINE" button for the user to press instead.
   const [loginCancelled, setLoginCancelled] = useState(false)
   const liffRef = useRef<Liff | null>(null)
 

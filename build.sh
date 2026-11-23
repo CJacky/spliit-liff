@@ -2,13 +2,13 @@
 
 set -Eeuo pipefail
 
-# 在 PC 上編譯 spliit 映像檔，匯出成 tar.gz 放到 NAS 掛載目錄，
-# 之後在 NAS 上 `docker load` + `docker compose up -d` 即可，不必在 NAS 上編譯。
+# Build the spliit image on the PC and export it as a tar.gz into the NAS mount,
+# then run `docker load` + `docker compose up -d` on the NAS; no building on the NAS.
 #
-# 可選設定（環境變數）：
-#   IMAGE_NAME=spliit-local     必須與 NAS docker-compose.yml 的 image: 一致
+# Optional settings (environment variables):
+#   IMAGE_NAME=spliit-local     must match image: in the NAS docker-compose.yml
 #   IMAGE_TAG=latest
-#   OUTPUT_DIR=~/docker/spliit  NAS 的 SMB 掛載目錄
+#   OUTPUT_DIR=~/docker/spliit  SMB mount of the NAS
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 BUILD_CONTEXT="${SCRIPT_DIR}"
@@ -16,18 +16,18 @@ BUILD_CONTEXT="${SCRIPT_DIR}"
 IMAGE_NAME=${IMAGE_NAME:-spliit-local}
 IMAGE_TAG=${IMAGE_TAG:-latest}
 OUTPUT_DIR=${OUTPUT_DIR:-"${HOME}/docker/spliit"}
-# Synology DS920+ (synology_geminilake_920+) 的 uname 架構為 x86_64。
+# Synology DS920+ (synology_geminilake_920+) reports x86_64 from uname.
 TARGET_PLATFORM=linux/amd64
 
 IMAGE_REF="${IMAGE_NAME}:${IMAGE_TAG}"
 ARCHIVE_NAME="${IMAGE_NAME//\//_}-${IMAGE_TAG}.tar.gz"
 ARCHIVE_PATH="${OUTPUT_DIR}/${ARCHIVE_NAME}"
 TEMP_ARCHIVE="${SCRIPT_DIR}/.${ARCHIVE_NAME}.tmp.$$"
-# 先複製到 NAS 上的暫存檔再 rename，避免複製中斷時留下不完整的 tar.gz。
+# Copy to a temp file on the NAS and then rename, so an interrupted copy never leaves a partial tar.gz.
 REMOTE_TEMP="${OUTPUT_DIR}/.${ARCHIVE_NAME}.partial.$$"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 LOAD_SCRIPT="${SCRIPT_DIR}/load.sh"
-# 與映像檔一起放到 NAS 的檔案
+# Files copied to the NAS alongside the image
 RUNTIME_FILES=("${COMPOSE_FILE}" "${LOAD_SCRIPT}")
 FILE_TEMP=""
 

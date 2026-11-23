@@ -1,14 +1,14 @@
 import { HomeRedirect } from '@/app/home-redirect'
 import { redirect } from 'next/navigation'
 
-// 首頁直接進群組列表。
+// The home page goes straight to the group list.
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  // 帶有查詢參數時（LIFF 的 liff.state 深層連結、LINE 登入回呼的 code 等），
-  // 不能在 server 端轉址，否則參數會遺失；交給 LIFF 處理完再由 client 轉址。
+  // With query params (LIFF liff.state deep links, LINE login callback code, etc.)
+  // we must not redirect on the server or the params are lost; let LIFF handle them, then redirect on the client.
   if (Object.keys(await searchParams).length === 0) redirect('/groups')
   return <HomeRedirect />
 }

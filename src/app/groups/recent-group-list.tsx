@@ -75,7 +75,7 @@ function sortGroups({
 export function RecentGroupList() {
   const [state, setState] = useState<RecentGroupsState>({ status: 'pending' })
   const { profile } = useLiff()
-  // 「我的群組」以資料庫為準：綁定目前 LINE 帳號的群組，換裝置也看得到。
+  // "My groups" comes from the database: groups linked to the current LINE account, visible across devices.
   const myGroups = trpc.groups.listMine.useQuery(
     { lineUserId: profile?.userId ?? '' },
     { enabled: !!profile },
@@ -99,7 +99,7 @@ export function RecentGroupList() {
 
   useEffect(() => {
     if (myGroups.data) mergeRecentGroups(myGroups.data.groups)
-    // 查詢失敗時仍顯示本機列表，不擋住使用者。
+    // If the query fails, still show the local list instead of blocking the user.
     if (myGroups.data || myGroups.isError || !profile) loadGroups()
   }, [loadGroups, myGroups.data, myGroups.isError, profile])
 

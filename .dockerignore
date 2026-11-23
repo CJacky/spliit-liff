@@ -27,7 +27,7 @@ blob-report
 .DS_Store
 npm-debug.log*
 
-# PC 打包用檔案（build.sh），不需要進映像檔
+# PC packaging files (build.sh), not needed in the image
 build.sh
 docker-compose.yml
 load.sh

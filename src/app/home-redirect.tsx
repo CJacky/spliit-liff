@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 /**
- * 只會在 LiffProvider 完成登入後才渲染。若網址帶 liff.state，
- * LIFF 會自行導向深層連結的目標頁，這裡不搶著轉址；否則進群組列表。
+ * Only rendered after LiffProvider has finished logging in. If the URL carries liff.state,
+ * LIFF navigates to the deep link target itself, so don't redirect here; otherwise go to the group list.
  */
 export function HomeRedirect() {
   const router = useRouter()

@@ -20,7 +20,7 @@ export async function createGroup(groupFormValues: GroupFormValues) {
       information: groupFormValues.information,
       currency: groupFormValues.currency,
       currencyCode: groupFormValues.currencyCode,
-      // 建立者是第一位成員（新建群組表單固定綁定目前的 LINE 使用者）。
+      // The creator is the first participant (the create form always links the current LINE user).
       creatorLineUserId: groupFormValues.participants[0]?.lineUserId ?? null,
       participants: {
         createMany: {
@@ -224,7 +224,7 @@ export async function getGroupExpensesParticipants(groupId: string) {
   )
 }
 
-/** 目前 LINE 使用者有綁定成員的所有群組（「我的群組」以資料庫為準）。 */
+/** All groups where the current LINE user is linked to a participant ("my groups" comes from the database). */
 export async function getGroupsForLineUser(lineUserId: string) {
   return prisma.group.findMany({
     where: { participants: { some: { lineUserId } } },
@@ -421,8 +421,8 @@ export async function updateGroup(
           .filter((participant) => participant.id !== undefined)
           .map((participant) => ({
             where: { id: participant.id },
-            // LINE 綁定只能透過 claim/createLineParticipant 建立，
-            // 編輯群組不能修改或解除。
+            // LINE links can only be created via claim/createLineParticipant;
+            // editing the group cannot change or remove them.
             data: { name: participant.name },
           })),
         createMany: {
