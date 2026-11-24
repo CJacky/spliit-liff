@@ -182,15 +182,6 @@
         "description": "支出を支払った参加者を選択してください。",
         "placeholder": "参加者を選択してください"
       },
-      "recurrenceRule": {
-        "label": "支出の繰り返し",
-        "description": "支出の繰り返し頻度を選択してください。",
-        "none": "なし",
-        "daily": "毎日",
-        "weekly": "毎週",
-        "monthly": "毎月",
-        "yearly": "毎年"
-      },
       "paidFor": {
         "title": "支払い対象",
         "description": "誰のために支出が支払われたかを選択してください。"
@@ -359,18 +350,6 @@
       "title": "カテゴリーごとの支出",
       "description": "各カテゴリーの合計支出額。",
       "empty": "まだ支出はありません。"
-    },
-    "Recurring": {
-      "title": "定期的な支出",
-      "description": "グループの有効な定期的支出の推定費用。",
-      "estimatedMonthly": "推定月額",
-      "estimatedYearly": "年間 {amount}",
-      "period": {
-        "DAILY": "{count, plural, other {毎日の支出 #件}}",
-        "WEEKLY": "{count, plural, other {毎週の支出 #件}}",
-        "MONTHLY": "{count, plural, other {毎月の支出 #件}}",
-        "YEARLY": "{count, plural, other {毎年の支出 #件}}"
-      }
     }
   },
   "Activity": {

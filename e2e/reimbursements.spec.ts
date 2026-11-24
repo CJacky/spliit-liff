@@ -2,9 +2,8 @@ import {
   addExpense,
   createGroup,
   expectBalance,
-  EXPENSES_URL,
+  expenseCard,
   openTab,
-  paidForRow,
   reimbursementRow,
   uniqueSuffix,
 } from './app'
@@ -32,33 +31,17 @@ test('settles a debt through "Mark as paid"', async ({ page }) => {
   await expect(row).toContainText('Bob owes Alice')
   await expect(row).toContainText(money(50))
 
-  await row.getByRole('link', { name: 'Mark as paid' }).click()
-  await page.waitForURL(/\/expenses\/create\?.*reimbursement=yes/, {
-    timeout: 30_000,
-  })
+  // Marking as paid records the repayment directly, after a confirmation.
+  await row.getByRole('button', { name: 'Mark as paid' }).click()
+  await expect(page.getByText(/Record that Bob paid Alice/)).toBeVisible()
+  await page.getByRole('button', { name: 'Record payment' }).click()
 
-  // The link prefills the whole form from its query string.
-  await expect(page.locator('input[name="title"]')).toHaveValue('Reimbursement')
-  await expect(page.locator('input[name="amount"]')).toHaveValue(/^50/)
-  await expect(page.getByTestId('paid-by')).toContainText('Bob')
-  await expect(paidForRow(page, 'Alice').getByRole('checkbox')).toHaveAttribute(
-    'aria-checked',
-    'true',
-  )
-  await expect(paidForRow(page, 'Bob').getByRole('checkbox')).toHaveAttribute(
-    'aria-checked',
-    'false',
-  )
-
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
-  await page.waitForURL(EXPENSES_URL, { timeout: 30_000 })
-
-  await expect(
-    page.getByTestId('expense-card').filter({ hasText: 'Reimbursement' }),
-  ).toBeVisible()
-
-  await openTab(page, 'Balances')
   await expectBalance(page, 'Alice', 0)
   await expectBalance(page, 'Bob', 0)
   await expect(page.getByText(/doesn.t need any reimbursement/)).toBeVisible()
+
+  await openTab(page, 'Expenses')
+  const card = expenseCard(page, 'Reimbursement')
+  await expect(card).toBeVisible()
+  await expect(card).toContainText(money(50))
 })

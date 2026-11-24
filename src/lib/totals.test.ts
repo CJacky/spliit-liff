@@ -4,7 +4,6 @@ import {
   filterExpensesByDateRange,
   getExpensesByCategory,
   getExpensesByMonth,
-  getRecurringSpending,
   getSpendingByCategory,
   getSpendingByParticipant,
   getSpendingOverTime,
@@ -343,48 +342,6 @@ describe('getSpendingByParticipant', () => {
       },
       { participantId: 'bob', name: 'Bob', paid: 0, paidCount: 0, share: 500 },
     ])
-  })
-})
-
-describe('getRecurringSpending', () => {
-  it('summarizes active recurring expenses per period', () => {
-    const result = getRecurringSpending([
-      { amount: 1000, recurrenceRule: 'MONTHLY', isReimbursement: false },
-      { amount: 500, recurrenceRule: 'MONTHLY', isReimbursement: false },
-      { amount: 700, recurrenceRule: 'WEEKLY', isReimbursement: false },
-      { amount: 100, recurrenceRule: 'DAILY', isReimbursement: false },
-      { amount: 12000, recurrenceRule: 'YEARLY', isReimbursement: false },
-      { amount: 999, recurrenceRule: 'NONE', isReimbursement: false },
-      { amount: 999, recurrenceRule: 'MONTHLY', isReimbursement: true },
-    ])
-
-    expect(result.count).toBe(5)
-    expect(result.byPeriod).toEqual([
-      { period: 'DAILY', count: 1, total: 100 },
-      { period: 'WEEKLY', count: 1, total: 700 },
-      { period: 'MONTHLY', count: 2, total: 1500 },
-      { period: 'YEARLY', count: 1, total: 12000 },
-    ])
-    const expectedMonthly = Math.round(
-      100 * (365.25 / 12) + 700 * (365.25 / 12 / 7) + 1500 + 12000 / 12,
-    )
-    expect(result.estimatedMonthly).toBe(expectedMonthly)
-    // Yearly is computed independently from the monthly figure (not × 12) so it
-    // does not compound the monthly rounding.
-    const expectedYearly = Math.round(
-      100 * 365.25 + 700 * (365.25 / 7) + 1500 * 12 + 12000,
-    )
-    expect(result.estimatedYearly).toBe(expectedYearly)
-  })
-
-  it('returns an empty summary when there are no recurring expenses', () => {
-    const result = getRecurringSpending([
-      { amount: 1000, recurrenceRule: 'NONE', isReimbursement: false },
-    ])
-    expect(result.count).toBe(0)
-    expect(result.byPeriod).toEqual([])
-    expect(result.estimatedMonthly).toBe(0)
-    expect(result.estimatedYearly).toBe(0)
   })
 })
 

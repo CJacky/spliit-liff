@@ -1,12 +1,6 @@
-import {
-  ActivityType,
-  Expense,
-  RecurrenceRule,
-  RecurringExpenseLink,
-} from '@/generated/prisma/client'
+import { ActivityType, Expense } from '@/generated/prisma/client'
 import { prisma } from '@/lib/prisma'
 import { randomId } from '@/lib/random'
-import { nextRecurringDate, usesAnchorDay } from '@/lib/recurrence'
 import { ExpenseFormValues, GroupFormValues } from '@/lib/schemas'
 
 // Re-exported for backwards compatibility with existing server-side importers.
@@ -70,14 +64,6 @@ export async function createExpense(
     data: expenseFormValues.title,
   })
 
-  const isCreateRecurrence =
-    expenseFormValues.recurrenceRule !== RecurrenceRule.NONE
-  const recurringExpenseLinkPayload = createPayloadForNewRecurringExpenseLink(
-    expenseFormValues.recurrenceRule as RecurrenceRule,
-    expenseFormValues.expenseDate,
-    groupId,
-  )
-
   return prisma.expense.create({
     data: {
       id: expenseId,
@@ -91,14 +77,6 @@ export async function createExpense(
       title: expenseFormValues.title,
       paidById: expenseFormValues.paidBy,
       splitMode: expenseFormValues.splitMode,
-      recurrenceRule: expenseFormValues.recurrenceRule,
-      recurringExpenseLink: {
-        ...(isCreateRecurrence
-          ? {
-              create: recurringExpenseLinkPayload,
-            }
-          : {}),
-      },
       paidFor: {
         createMany: {
           data: expenseFormValues.paidFor.map((paidFor) => ({
@@ -293,45 +271,6 @@ export async function updateExpense(
     data: expenseFormValues.title,
   })
 
-  const isDeleteRecurrenceExpenseLink =
-    existingExpense.recurrenceRule !== RecurrenceRule.NONE &&
-    expenseFormValues.recurrenceRule === RecurrenceRule.NONE &&
-    // Delete the existing RecurrenceExpenseLink only if it has not been acted upon yet
-    existingExpense.recurringExpenseLink?.nextExpenseCreatedAt === null
-
-  const expenseDateChanged =
-    existingExpense.expenseDate.getUTCFullYear() !==
-      expenseFormValues.expenseDate.getUTCFullYear() ||
-    existingExpense.expenseDate.getUTCMonth() !==
-      expenseFormValues.expenseDate.getUTCMonth() ||
-    existingExpense.expenseDate.getUTCDate() !==
-      expenseFormValues.expenseDate.getUTCDate()
-  const isUpdateRecurrenceExpenseLink =
-    existingExpense.recurringExpenseLink?.nextExpenseCreatedAt === null &&
-    expenseFormValues.recurrenceRule !== RecurrenceRule.NONE &&
-    (existingExpense.recurrenceRule !== expenseFormValues.recurrenceRule ||
-      expenseDateChanged)
-  const isCreateRecurrenceExpenseLink =
-    existingExpense.recurrenceRule === RecurrenceRule.NONE &&
-    expenseFormValues.recurrenceRule !== RecurrenceRule.NONE &&
-    // Create a new RecurrenceExpenseLink only if one does not already exist for the expense
-    existingExpense.recurringExpenseLink === null
-
-  const newRecurringExpenseLink = createPayloadForNewRecurringExpenseLink(
-    expenseFormValues.recurrenceRule as RecurrenceRule,
-    expenseFormValues.expenseDate,
-    groupId,
-  )
-
-  const updatedAnchorDay = usesAnchorDay(expenseFormValues.recurrenceRule)
-    ? expenseFormValues.expenseDate.getUTCDate()
-    : null
-  const updatedRecurrenceExpenseLinkNextExpenseDate = nextRecurringDate(
-    expenseFormValues.recurrenceRule,
-    expenseFormValues.expenseDate,
-    updatedAnchorDay,
-  )
-
   return prisma.expense.update({
     where: { id: expenseId },
     data: {
@@ -344,7 +283,6 @@ export async function updateExpense(
       categoryId: expenseFormValues.category,
       paidById: expenseFormValues.paidBy,
       splitMode: expenseFormValues.splitMode,
-      recurrenceRule: expenseFormValues.recurrenceRule,
       paidFor: {
         create: expenseFormValues.paidFor
           .filter(
@@ -374,22 +312,6 @@ export async function updateExpense(
               (pf) => pf.participant === paidFor.participantId,
             ),
         ),
-      },
-      recurringExpenseLink: {
-        ...(isCreateRecurrenceExpenseLink
-          ? {
-              create: newRecurringExpenseLink,
-            }
-          : {}),
-        ...(isUpdateRecurrenceExpenseLink
-          ? {
-              update: {
-                nextExpenseDate: updatedRecurrenceExpenseLinkNextExpenseDate,
-                anchorDay: updatedAnchorDay,
-              },
-            }
-          : {}),
-        delete: isDeleteRecurrenceExpenseLink,
       },
       isReimbursement: expenseFormValues.isReimbursement,
       documents: {
@@ -537,8 +459,6 @@ export async function getGroupExpenses(
   groupId: string,
   options?: { offset?: number; length?: number; filter?: string },
 ) {
-  await createRecurringExpenses()
-
   return prisma.expense.findMany({
     select: {
       amount: true,
@@ -557,7 +477,6 @@ export async function getGroupExpenses(
         },
       },
       splitMode: true,
-      recurrenceRule: true,
       title: true,
       _count: { select: { documents: true } },
     },
@@ -581,37 +500,6 @@ export async function getGroupExpenseCount(groupId: string) {
   return prisma.expense.count({ where: { groupId } })
 }
 
-/**
- * Returns the currently active recurring expenses of a group: the latest frame
- * of every ongoing recurring series. Each materialized frame keeps its own
- * `recurringExpenseLink`, but only the current frame's link is still "open"
- * (`nextExpenseCreatedAt` is null) — past frames have it set once their
- * successor is created (see `createRecurringExpenses`). Filtering on the open
- * link ensures a single subscription is counted only once. Used for recurring
- * stats (#508).
- */
-export async function getActiveRecurringExpenses(groupId: string) {
-  await createRecurringExpenses()
-
-  return prisma.expense.findMany({
-    select: {
-      id: true,
-      title: true,
-      amount: true,
-      category: true,
-      recurrenceRule: true,
-      isReimbursement: true,
-    },
-    where: {
-      groupId,
-      isReimbursement: false,
-      recurrenceRule: { not: RecurrenceRule.NONE },
-      recurringExpenseLink: { is: { nextExpenseCreatedAt: null } },
-    },
-    orderBy: { amount: 'desc' },
-  })
-}
-
 export async function getExpense(groupId: string, expenseId: string) {
   return prisma.expense.findUnique({
     where: { id: expenseId },
@@ -620,7 +508,6 @@ export async function getExpense(groupId: string, expenseId: string) {
       paidFor: true,
       category: true,
       documents: true,
-      recurringExpenseLink: true,
     },
   })
 }
@@ -668,179 +555,4 @@ export async function logActivity(
       ...extra,
     },
   })
-}
-
-async function createRecurringExpenses() {
-  const localDate = new Date() // Current local date
-  const utcDateFromLocal = new Date(
-    Date.UTC(
-      localDate.getUTCFullYear(),
-      localDate.getUTCMonth(),
-      localDate.getUTCDate(),
-      // More precision beyond date is required to ensure that recurring Expenses are created within <most precises unit> of when expected
-      localDate.getUTCHours(),
-      localDate.getUTCMinutes(),
-    ),
-  )
-
-  const recurringExpenseLinksWithExpensesToCreate =
-    await prisma.recurringExpenseLink.findMany({
-      where: {
-        nextExpenseCreatedAt: null,
-        nextExpenseDate: {
-          lte: utcDateFromLocal,
-        },
-      },
-      include: {
-        currentFrameExpense: {
-          include: {
-            paidBy: true,
-            paidFor: true,
-            category: true,
-            documents: true,
-          },
-        },
-      },
-    })
-
-  for (const recurringExpenseLink of recurringExpenseLinksWithExpensesToCreate) {
-    let newExpenseDate = recurringExpenseLink.nextExpenseDate
-
-    let currentExpenseRecord = recurringExpenseLink.currentFrameExpense
-    let currentReccuringExpenseLinkId = recurringExpenseLink.id
-    const anchorDay =
-      recurringExpenseLink.anchorDay ??
-      (usesAnchorDay(currentExpenseRecord.recurrenceRule)
-        ? currentExpenseRecord.expenseDate.getUTCDate()
-        : null)
-
-    while (newExpenseDate < utcDateFromLocal) {
-      const recurrenceRule = currentExpenseRecord.recurrenceRule
-
-      if (recurrenceRule === null || recurrenceRule === RecurrenceRule.NONE)
-        break
-
-      const newExpenseId = randomId()
-      const newRecurringExpenseLinkId = randomId()
-
-      const newRecurringExpenseNextExpenseDate = nextRecurringDate(
-        recurrenceRule,
-        newExpenseDate,
-        anchorDay,
-      )
-
-      const {
-        category,
-        paidBy,
-        paidFor,
-        documents,
-        ...destructeredCurrentExpenseRecord
-      } = currentExpenseRecord
-
-      // Use a transacton to ensure that the only one expense is created for the RecurringExpenseLink
-      // just in case two clients are processing the same RecurringExpenseLink at the same time
-      const newExpense = await prisma
-        .$transaction(async (transaction) => {
-          const newExpense = await transaction.expense.create({
-            data: {
-              ...destructeredCurrentExpenseRecord,
-              categoryId: currentExpenseRecord.categoryId,
-              paidById: currentExpenseRecord.paidById,
-              paidFor: {
-                createMany: {
-                  data: currentExpenseRecord.paidFor.map((paidFor) => ({
-                    participantId: paidFor.participantId,
-                    shares: paidFor.shares,
-                  })),
-                },
-              },
-              documents: {
-                createMany: {
-                  data: currentExpenseRecord.documents.map(
-                    (documentRecord) => ({
-                      id: randomId(),
-                      url: documentRecord.url,
-                      width: documentRecord.width,
-                      height: documentRecord.height,
-                    }),
-                  ),
-                },
-              },
-              id: newExpenseId,
-              expenseDate: newExpenseDate,
-              recurringExpenseLink: {
-                create: {
-                  groupId: currentExpenseRecord.groupId,
-                  id: newRecurringExpenseLinkId,
-                  nextExpenseDate: newRecurringExpenseNextExpenseDate,
-                  anchorDay,
-                },
-              },
-            },
-            // Ensure that the same information is available on the returned record that was created
-            include: {
-              paidFor: true,
-              documents: true,
-              category: true,
-              paidBy: true,
-            },
-          })
-
-          // Mark the RecurringExpenseLink as being "completed" since the new Expense was created
-          // if an expense hasn't been created for this RecurringExpenseLink yet
-          await transaction.recurringExpenseLink.update({
-            where: {
-              id: currentReccuringExpenseLinkId,
-              nextExpenseCreatedAt: null,
-            },
-            data: {
-              nextExpenseCreatedAt: newExpense.createdAt,
-              anchorDay,
-            },
-          })
-
-          return newExpense
-        })
-        .catch(() => {
-          console.error(
-            'Failed to created recurringExpense for expenseId: %s',
-            currentExpenseRecord.id,
-          )
-          return null
-        })
-
-      // If the new expense failed to be created, break out of the while-loop
-      if (newExpense === null) break
-
-      // Set the values for the next iteration of the for-loop in case multiple recurring Expenses need to be created
-      currentExpenseRecord = newExpense
-      currentReccuringExpenseLinkId = newRecurringExpenseLinkId
-      newExpenseDate = newRecurringExpenseNextExpenseDate
-    }
-  }
-}
-
-function createPayloadForNewRecurringExpenseLink(
-  recurrenceRule: RecurrenceRule,
-  priorDateToNextRecurrence: Date,
-  groupId: String,
-): RecurringExpenseLink {
-  const anchorDay = usesAnchorDay(recurrenceRule)
-    ? priorDateToNextRecurrence.getUTCDate()
-    : null
-  const nextExpenseDate = nextRecurringDate(
-    recurrenceRule,
-    priorDateToNextRecurrence,
-    anchorDay,
-  )
-
-  const recurringExpenseLinkId = randomId()
-  const recurringExpenseLinkPayload = {
-    id: recurringExpenseLinkId,
-    groupId: groupId,
-    nextExpenseDate: nextExpenseDate,
-    anchorDay,
-  }
-
-  return recurringExpenseLinkPayload as RecurringExpenseLink
 }

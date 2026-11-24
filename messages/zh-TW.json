@@ -188,15 +188,6 @@
       },
       "splitModeDescription": "選擇如何分配此筆消費。",
       "attachDescription": "查看／附上此筆消費的收據。",
-      "recurrenceRule": {
-        "description": "請選擇消費的重複週期。",
-        "none": "無",
-        "daily": "每天",
-        "weekly": "每週",
-        "monthly": "每月",
-        "yearly": "每年",
-        "label": "支出重複"
-      },
       "currencyField": {
         "label": "支出貨幣",
         "description": "支付這筆支出所使用的貨幣。"
@@ -308,7 +299,10 @@
       "description": "這是建議的銷帳方式",
       "noImbursements": "看起來你的群組目前不需要銷帳😁",
       "owes": "<strong>{from}</strong> 欠 <strong>{to}</strong>",
-      "markAsPaid": "標記為已支付"
+      "markAsPaid": "標記為已支付",
+      "confirmMarkAsPaid": "確定要記錄 <strong>{from}</strong> 已支付 <strong>{to}</strong> {amount} 嗎？",
+      "confirm": "記錄還款",
+      "markAsPaidError": "無法記錄還款，請稍後再試。"
     }
   },
   "Stats": {
@@ -359,18 +353,6 @@
       "title": "依類別統計支出",
       "description": "每個類別的支出總額。",
       "empty": "尚未有任何支出。"
-    },
-    "Recurring": {
-      "title": "週期性支出",
-      "description": "群組有效週期性支出的預估費用。",
-      "estimatedMonthly": "預估每月費用",
-      "estimatedYearly": "每年 {amount}",
-      "period": {
-        "DAILY": "{count, plural, other {# 筆每日支出}}",
-        "WEEKLY": "{count, plural, other {# 筆每週支出}}",
-        "MONTHLY": "{count, plural, other {# 筆每月支出}}",
-        "YEARLY": "{count, plural, other {# 筆每年支出}}"
-      }
     }
   },
   "Activity": {

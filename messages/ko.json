@@ -136,15 +136,6 @@
         "placeholder": "참가자를 선택해 주세요",
         "description": "지출을 결제한 사람을 선택해 주세요."
       },
-      "recurrenceRule": {
-        "label": "지출 반복 설정",
-        "description": "지출 반복 주기를 선택해 주세요.",
-        "daily": "매일",
-        "weekly": "매주",
-        "monthly": "매달",
-        "yearly": "매년",
-        "none": "없음"
-      },
       "paidFor": {
         "title": "비용 부담자들",
         "description": "비용 부담자들을 선택해 주세요."
@@ -299,18 +290,6 @@
       "title": "카테고리별 지출",
       "description": "각 카테고리의 총 지출액.",
       "empty": "아직 지출이 없습니다."
-    },
-    "Recurring": {
-      "title": "반복 지출",
-      "description": "그룹의 활성 반복 지출의 예상 비용.",
-      "estimatedMonthly": "예상 월 비용",
-      "estimatedYearly": "연 {amount}",
-      "period": {
-        "DAILY": "{count, plural, other {매일 지출 #건}}",
-        "WEEKLY": "{count, plural, other {매주 지출 #건}}",
-        "MONTHLY": "{count, plural, other {매월 지출 #건}}",
-        "YEARLY": "{count, plural, other {매년 지출 #건}}"
-      }
     }
   },
   "Activity": {

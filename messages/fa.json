@@ -158,13 +158,6 @@
       "TitleField": {
         "label": "عنوان هزینه"
       },
-      "recurrenceRule": {
-        "daily": "روزانه",
-        "weekly": "هفتگی",
-        "monthly": "ماهانه",
-        "yearly": "سالانه",
-        "label": "تناوب هزینه"
-      },
       "paidFor": {
         "title": "پرداخت شده برای"
       },

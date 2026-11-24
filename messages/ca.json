@@ -193,15 +193,6 @@
       "currencyField": {
         "label": "Moneda de la despesa",
         "description": "La moneda en que es va pagar la despesa."
-      },
-      "recurrenceRule": {
-        "label": "Despesa recurrent",
-        "description": "Tria la freqüència amb que s'ha de repetir la despesa.",
-        "none": "Cap",
-        "daily": "Diàriament",
-        "weekly": "Setmanalment",
-        "monthly": "Mensualment",
-        "yearly": "Anualment"
       }
     },
     "amountField": {
@@ -361,18 +352,6 @@
       "title": "Despeses per categoria",
       "description": "Import total gastat en cada categoria.",
       "empty": "Encara no hi ha cap despesa."
-    },
-    "Recurring": {
-      "title": "Despeses recurrents",
-      "description": "Cost estimat de les despeses recurrents actives del grup.",
-      "estimatedMonthly": "Cost mensual estimat",
-      "estimatedYearly": "{amount} a l'any",
-      "period": {
-        "DAILY": "{count, plural, one {# despesa diària} other {# despeses diàries}}",
-        "WEEKLY": "{count, plural, one {# despesa setmanal} other {# despeses setmanals}}",
-        "MONTHLY": "{count, plural, one {# despesa mensual} other {# despeses mensuals}}",
-        "YEARLY": "{count, plural, one {# despesa anual} other {# despeses anuals}}"
-      }
     }
   },
   "Activity": {

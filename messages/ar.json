@@ -179,15 +179,6 @@
         "placeholder": "اختر مشاركًا",
         "description": "اختر المشارك الذي دفع المصروف."
       },
-      "recurrenceRule": {
-        "label": "تكرار المصروف",
-        "description": "اختر عدد مرات تكرار المصروف.",
-        "none": "لا يوجد",
-        "daily": "يوميًا",
-        "weekly": "أسبوعيًا",
-        "monthly": "شهريًا",
-        "yearly": "سنويًا"
-      },
       "paidFor": {
         "title": "مدفوع لـ",
         "description": "اختر من تم دفع المصروف لأجله."

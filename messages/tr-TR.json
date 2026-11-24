@@ -184,15 +184,6 @@
       "currencyField": {
         "label": "Masrafın para birimi",
         "description": "Masrafın ödendiği para birimi."
-      },
-      "recurrenceRule": {
-        "label": "Masrafın Tekrarı",
-        "description": "Masrafın ne sıklıkla tekrarlanacağını seçin.",
-        "none": "Hiçbiri",
-        "daily": "Günlük",
-        "weekly": "Haftalık",
-        "monthly": "Aylık",
-        "yearly": "Yıllık"
       }
     },
     "amountField": {

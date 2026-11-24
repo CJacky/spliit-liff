@@ -8,10 +8,9 @@ import { AsyncLocalStorage } from 'node:async_hooks'
  * Prisma client is returned unwrapped, and `/api/trpc` sets no extra headers.
  *
  * It exists because the costliest things the suite needs to watch are invisible
- * from outside: `groups.balances.forUser` runs two queries per group, and
- * `getGroupExpenses` runs an unscoped `createRecurringExpenses()` pass before
- * its own query. Neither changes the response by a single byte, so response
- * size alone cannot catch them regressing.
+ * from outside: `groups.balances.forUser` runs two queries per group, which
+ * does not change the response by a single byte, so response size alone cannot
+ * catch it regressing.
  */
 export const PERF_INSTRUMENTATION_ENABLED =
   process.env['PERF_INSTRUMENTATION'] === '1'

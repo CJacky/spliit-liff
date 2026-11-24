@@ -198,15 +198,6 @@
         "description": "Seleziona il partecipante che ha pagato la spesa.",
         "placeholder": "Seleziona un partecipante"
       },
-      "recurrenceRule": {
-        "label": "Spesa ricorrente",
-        "description": "Seleziona quanto spesso deve ripetersi.",
-        "none": "Mai",
-        "daily": "Giornaliera",
-        "weekly": "Settimanale",
-        "monthly": "Mensile",
-        "yearly": "Annuale"
-      },
       "paidFor": {
         "title": "Pagato per",
         "description": "Seleleziona per chi è stato pagato."
@@ -381,18 +372,6 @@
       "showExpenses": "Mostra le spese di {category}",
       "detailsDescription": "Spese di questa categoria nel periodo selezionato.",
       "detailsEmpty": "Non ci sono spese in questa categoria."
-    },
-    "Recurring": {
-      "title": "Spese ricorrenti",
-      "description": "Costo stimato delle spese ricorrenti attive del gruppo.",
-      "estimatedMonthly": "Costo mensile stimato",
-      "estimatedYearly": "{amount} all'anno",
-      "period": {
-        "DAILY": "{count, plural, one {# spesa giornaliera} other {# spese giornaliere}}",
-        "WEEKLY": "{count, plural, one {# spesa settimanale} other {# spese settimanali}}",
-        "MONTHLY": "{count, plural, one {# spesa mensile} other {# spese mensili}}",
-        "YEARLY": "{count, plural, one {# spesa annuale} other {# spese annuali}}"
-      }
     },
     "MonthlySpending": {
       "title": "Spesa mensile",

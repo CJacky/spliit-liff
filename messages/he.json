@@ -179,15 +179,6 @@
         "placeholder": "בחר משתתף",
         "description": "בחר את המשתתף ששילם את ההוצאה."
       },
-      "recurrenceRule": {
-        "label": "חזרתיות הוצאה",
-        "description": "בחר כמה פעמים ההוצאה צריכה לחזור.",
-        "none": "ללא",
-        "daily": "יומית",
-        "weekly": "שבועית",
-        "monthly": "חודשית",
-        "yearly": "שנתית"
-      },
       "paidFor": {
         "title": "שולם עבור",
         "description": "בחר עבור מי שולמה ההוצאה."

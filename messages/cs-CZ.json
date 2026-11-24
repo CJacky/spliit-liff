@@ -194,15 +194,6 @@
         "description": "Vyberte účastníka, který výdaj zaplatil.",
         "placeholder": "Vyberte účastníka"
       },
-      "recurrenceRule": {
-        "label": "Opakování výdaje",
-        "description": "Vyberte, jak často se má výdaj opakovat.",
-        "none": "Žádné",
-        "daily": "Denně",
-        "weekly": "Týdně",
-        "monthly": "Měsíčně",
-        "yearly": "Ročně"
-      },
       "paidFor": {
         "title": "Zaplaceno pro",
         "description": "Vyberte, pro koho byl výdaj zaplacen."
@@ -377,18 +368,6 @@
       "showExpenses": "Zobrazit výdaje za {category}",
       "detailsDescription": "Výdaje v této kategorii za vybrané období.",
       "detailsEmpty": "V této kategorii nejsou žádné výdaje."
-    },
-    "Recurring": {
-      "title": "Opakující se výdaje",
-      "estimatedYearly": "{amount} ročně",
-      "description": "Odhadované náklady na aktivní opakující se výdaje skupiny.",
-      "estimatedMonthly": "Odhadované měsíční náklady",
-      "period": {
-        "DAILY": "{count, plural, one {# denní výdaj} few {# denní výdaje} many {# denního výdaje} other {# denních výdajů}}",
-        "WEEKLY": "{count, plural, one {# týdenní výdaj} few {# týdenní výdaje} many {# týdenního výdaje} other {# týdenních výdajů}}",
-        "MONTHLY": "{count, plural, one {# měsíční výdaj} few {# měsíční výdaje} many {# měsíčního výdaje} other {# měsíčních výdajů}}",
-        "YEARLY": "{count, plural, one {# roční výdaj} few {# roční výdaje} many {# ročního výdaje} other {# ročních výdajů}}"
-      }
     },
     "MonthlySpending": {
       "title": "Měsíční výdaje",

@@ -18,7 +18,11 @@ test.use({ exchangeRate: 1.25 })
 
 const PARTICIPANTS = ['Alice', 'Bob']
 
-/** Creates a group where Bob owes Alice 50, and opens "Mark as paid". */
+/**
+ * Creates a group where Bob owes Alice 50, records it through "Mark as paid",
+ * and opens the resulting repayment. Choosing another currency for the
+ * transfer happens there, on the edit form.
+ */
 async function openRepaymentForm(page: Page, name: string): Promise<string> {
   const groupId = await createGroup(page, {
     name: `${name} ${uniqueSuffix()}`,
@@ -32,11 +36,13 @@ async function openRepaymentForm(page: Page, name: string): Promise<string> {
 
   await openTab(page, 'Balances')
   await reimbursementRow(page, 'Bob', 'Alice')
-    .getByRole('link', { name: 'Mark as paid' })
+    .getByRole('button', { name: 'Mark as paid' })
     .click()
-  await page.waitForURL(/\/expenses\/create\?.*reimbursement=yes/, {
-    timeout: 30_000,
-  })
+  await page.getByRole('button', { name: 'Record payment' }).click()
+  await expect(page.getByText(/doesn.t need any reimbursement/)).toBeVisible()
+
+  await openTab(page, 'Expenses')
+  await openExpense(page, 'Reimbursement')
   return groupId
 }
 
@@ -80,7 +86,7 @@ test('settles the balance exactly and keeps the transferred amount', async ({
   )
   await expect(originalAmount(page)).toHaveValue('40.00')
 
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
   await page.waitForURL(EXPENSES_URL, { timeout: 30_000 })
 
   // The card carries both figures: what settles the balance and what moved.
@@ -121,6 +127,8 @@ test('refreshing the exchange rate does not submit the form', async ({
     page.waitForURL(EXPENSES_URL, { timeout: 5_000 }),
   ).rejects.toThrow()
 
-  await expect(page).toHaveURL(new RegExp(`/groups/${groupId}/expenses/create`))
+  await expect(page).toHaveURL(
+    new RegExp(`/groups/${groupId}/expenses/[^/]+/edit`),
+  )
   await expect(originalAmount(page)).toHaveValue('40.00')
 })

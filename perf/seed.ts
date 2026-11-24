@@ -8,7 +8,7 @@
  * Going through `src/lib/api.ts` would be slower still -- that path writes one
  * expense per call and logs an activity for each.
  *
- * Three properties of this data are load-bearing for the budgets:
+ * Two properties of this data are load-bearing for the budgets:
  *
  * 1. **Fixed seed, fixed timestamps.** `budgets.ts` asserts on response byte
  *    sizes, which are only stable if the rows are identical every run.
@@ -17,12 +17,6 @@
  *    `[{expenseDate: desc}, {createdAt: desc}]`. If two rows tied on both,
  *    postgres could return them in either order and the byte counts would flap.
  *    Every expense therefore gets a unique `createdAt`.
- *
- * 3. **Nothing recurs.** `getGroupExpenses` calls `createRecurringExpenses()`
- *    on every read (src/lib/api.ts), which *writes* when a frame is due -- during
- *    a benchmark that would move both row and query counts between iterations.
- *    Every expense is `NONE` with no `RecurringExpenseLink`, so that pass finds
- *    nothing to do and stays a single constant-cost query.
  */
 import { Client } from 'pg'
 import {
@@ -152,7 +146,7 @@ async function main() {
     // _prisma_migrations.
     await client.query(`
       TRUNCATE TABLE
-        "ExpensePaidFor", "ExpenseDocument", "RecurringExpenseLink",
+        "ExpensePaidFor", "ExpenseDocument",
         "Activity", "Expense", "Participant", "Group"
       RESTART IDENTITY CASCADE
     `)
@@ -239,7 +233,6 @@ async function main() {
           'groupId',
           'isReimbursement',
           'splitMode',
-          'recurrenceRule',
         ],
         expenseRows.map((e) => [
           e.id,
@@ -252,9 +245,8 @@ async function main() {
           groupId(g),
           e.isReimbursement,
           e.splitMode,
-          'NONE',
         ]),
-        { 9: '"SplitMode"', 10: '"RecurrenceRule"' },
+        { 9: '"SplitMode"' },
       )
 
       await insertRows(

@@ -179,15 +179,6 @@
         "placeholder": "Chọn thành viên",
         "description": "Chọn thành viên đã thanh toán khoản chi."
       },
-      "recurrenceRule": {
-        "label": "Chi tiêu định kỳ",
-        "description": "Chọn tần suất lặp lại của khoản chi.",
-        "none": "Không có",
-        "daily": "Hàng ngày",
-        "weekly": "Hàng tuần",
-        "monthly": "Hàng tháng",
-        "yearly": "Hàng năm"
-      },
       "paidFor": {
         "title": "Chi cho",
         "description": "Chọn thành viên nhận khoản chi."

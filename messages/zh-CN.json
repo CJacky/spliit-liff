@@ -191,15 +191,6 @@
       "currencyField": {
         "label": "支出币种",
         "description": "支出所使用的货币。"
-      },
-      "recurrenceRule": {
-        "label": "订阅式支出",
-        "description": "请选择这笔开销发生的频率。",
-        "none": "无",
-        "daily": "每天",
-        "weekly": "每周",
-        "monthly": "每月",
-        "yearly": "每年"
       }
     },
     "amountField": {
@@ -359,18 +350,6 @@
       "title": "按类别统计支出",
       "description": "每个类别的支出总额。",
       "empty": "还没有任何支出。"
-    },
-    "Recurring": {
-      "title": "周期性支出",
-      "description": "群组活跃周期性支出的预估费用。",
-      "estimatedMonthly": "预计每月费用",
-      "estimatedYearly": "每年 {amount}",
-      "period": {
-        "DAILY": "{count, plural, other {# 笔每日支出}}",
-        "WEEKLY": "{count, plural, other {# 笔每周支出}}",
-        "MONTHLY": "{count, plural, other {# 笔每月支出}}",
-        "YEARLY": "{count, plural, other {# 笔每年支出}}"
-      }
     }
   },
   "Activity": {

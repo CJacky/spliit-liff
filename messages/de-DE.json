@@ -225,15 +225,6 @@
         "placeholder": "Wähle einen Teilnehmer",
         "description": "Wähle den Teilnehmer, der die Ausgabe bezahlt hat."
       },
-      "recurrenceRule": {
-        "label": "Wiederholung der Ausgabe",
-        "description": "Wähle aus, wie oft die Ausgabe wiederholt werden soll.",
-        "none": "Niemals",
-        "daily": "Täglich",
-        "weekly": "Wöchentlich",
-        "monthly": "Monatlich",
-        "yearly": "Jährlich"
-      },
       "paidFor": {
         "title": "Gezahlt für",
         "description": "Wähle, für wen die Ausgabe gezahlt wurde."
@@ -408,18 +399,6 @@
       "showExpenses": "Ausgaben für {category} anzeigen",
       "detailsDescription": "Ausgaben in dieser Kategorie im gewählten Zeitraum.",
       "detailsEmpty": "Es gibt keine Ausgaben in dieser Kategorie."
-    },
-    "Recurring": {
-      "title": "Wiederkehrende Ausgaben",
-      "description": "Geschätzte Kosten der aktiven wiederkehrenden Ausgaben der Gruppe.",
-      "estimatedMonthly": "Geschätzte monatliche Kosten",
-      "estimatedYearly": "{amount} pro Jahr",
-      "period": {
-        "DAILY": "{count, plural, one {# tägliche Ausgabe} other {# tägliche Ausgaben}}",
-        "WEEKLY": "{count, plural, one {# wöchentliche Ausgabe} other {# wöchentliche Ausgaben}}",
-        "MONTHLY": "{count, plural, one {# monatliche Ausgabe} other {# monatliche Ausgaben}}",
-        "YEARLY": "{count, plural, one {# jährliche Ausgabe} other {# jährliche Ausgaben}}"
-      }
     },
     "MonthlySpending": {
       "title": "Monatliche Ausgaben",

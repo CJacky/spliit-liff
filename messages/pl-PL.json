@@ -192,15 +192,6 @@
         "label": "Opłacone przez",
         "description": "Wybierz członka, który zapłacił."
       },
-      "recurrenceRule": {
-        "label": "Powtarzalnośc wydatku",
-        "description": "Wybierz jak często wydatek ma się powtarzać.",
-        "none": "Jednorazowo",
-        "daily": "Codziennie",
-        "weekly": "Co tydzień",
-        "monthly": "Co miesiąc",
-        "yearly": "Co rok"
-      },
       "paidFor": {
         "title": "Opłacone dla",
         "description": "Wybierz kogo dotyczył wydatek."
@@ -362,18 +353,6 @@
       "description": "Łączna kwota wydana w każdej kategorii.",
       "empty": "Nie ma jeszcze żadnych wydatków.",
       "showExpenses": "Pokaż wydatki w kategorii {category}"
-    },
-    "Recurring": {
-      "title": "Wydatki cykliczne",
-      "description": "Szacowany koszt aktywnych wydatków cyklicznych grupy.",
-      "estimatedMonthly": "Szacowany koszt miesięczny",
-      "estimatedYearly": "{amount} rocznie",
-      "period": {
-        "DAILY": "{count, plural, one {# dzienny wydatek} few {# dzienne wydatki} many {# dziennych wydatków} other {# dziennego wydatku}}",
-        "WEEKLY": "{count, plural, one {# tygodniowy wydatek} few {# tygodniowe wydatki} many {# tygodniowych wydatków} other {# tygodniowego wydatku}}",
-        "MONTHLY": "{count, plural, one {# miesięczny wydatek} few {# miesięczne wydatki} many {# miesięcznych wydatków} other {# miesięcznego wydatku}}",
-        "YEARLY": "{count, plural, one {# roczny wydatek} few {# roczne wydatki} many {# rocznych wydatków} other {# rocznego wydatku}}"
-      }
     }
   },
   "Activity": {

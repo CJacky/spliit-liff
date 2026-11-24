@@ -202,15 +202,6 @@
         "placeholder": "Pasirinkite dalyvį",
         "description": "Pasirinkite dalyvį, kuris apmokėjo išlaidas."
       },
-      "recurrenceRule": {
-        "label": "Išlaidų pasikartojimas",
-        "description": "Pasirinkite, kaip dažnai išlaidos turėtų kartotis.",
-        "none": "Nėra",
-        "daily": "Kasdien",
-        "weekly": "Kas savaitę",
-        "monthly": "Kas mėnesį",
-        "yearly": "Kas metus"
-      },
       "paidFor": {
         "title": "Sumokėta už",
         "description": "Pasirinkite, kam buvo apmokėtos išlaidos."
@@ -381,18 +372,6 @@
       "showExpenses": "Rodyti {category} išlaidas",
       "detailsDescription": "Šios kategorijos išlaidos pasirinktu laikotarpiu.",
       "detailsEmpty": "Šioje kategorijoje nėra jokių išlaidų."
-    },
-    "Recurring": {
-      "title": "Pasikartojančios išlaidos",
-      "description": "Suskaičiuota grupės aktyvių pasikartojančių išlaidų kaina.",
-      "estimatedMonthly": "Suskaičiuotos mėnesinės išlaidos",
-      "estimatedYearly": "{amount} per metus",
-      "period": {
-        "DAILY": "{skaičius, daugkartinė, vienintelė {# daily expense} kitos {# daily expenses}}",
-        "WEEKLY": "{skaičius, daugkartinė, vienintelė {# weekly expense} kitos {# weekly expenses}}",
-        "MONTHLY": "{skaičius, daugkartinė, vienintelė {# monthly expense} kitos {# monthly expenses}}",
-        "YEARLY": "{count, plural, one {# yearly expense} other {# yearly expenses}}"
-      }
     },
     "MonthlySpending": {
       "title": "Mėnesinės išlaidos",

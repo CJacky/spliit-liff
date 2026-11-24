@@ -185,15 +185,6 @@
         "placeholder": "Seleciona um participante",
         "description": "Seleciona o participante que pagou esta despesa."
       },
-      "recurrenceRule": {
-        "label": "Recorrência",
-        "description": "Frequência com que a despesa se deve repetir.",
-        "none": "Nenhuma",
-        "daily": "Diária",
-        "weekly": "Semanal",
-        "monthly": "Mensal",
-        "yearly": "Anual"
-      },
       "paidFor": {
         "title": "Paga a",
         "description": "A quem a despesa foi paga."
@@ -363,18 +354,6 @@
       "showExpenses": "Mostrar as despesas de {category}",
       "detailsDescription": "Despesas desta categoria no período selecionado.",
       "detailsEmpty": "Não existem despesas nesta categoria."
-    },
-    "Recurring": {
-      "title": "Despesas recorrentes",
-      "description": "Custo estimado das despesas recorrentes ativas do grupo.",
-      "estimatedMonthly": "Custo mensal estimado",
-      "estimatedYearly": "{amount} por ano",
-      "period": {
-        "DAILY": "{count, plural, one {# despesa diária} other {# despesas diárias}}",
-        "WEEKLY": "{count, plural, one {# despesa semanal} other {# despesas semanais}}",
-        "MONTHLY": "{count, plural, one {# despesa mensal} other {# despesas mensais}}",
-        "YEARLY": "{count, plural, one {# despesa anual} other {# despesas anuais}}"
-      }
     }
   },
   "Activity": {

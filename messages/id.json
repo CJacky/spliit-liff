@@ -179,15 +179,6 @@
         "placeholder": "Pilih peserta",
         "description": "Pilih peserta yang membayar pengeluaran."
       },
-      "recurrenceRule": {
-        "label": "Pengeluaran Berulang",
-        "description": "Pilih seberapa sering pengeluaran harus diulang.",
-        "none": "Tidak ada",
-        "daily": "Setiap hari",
-        "weekly": "Setiap minggu",
-        "monthly": "Setiap bulan",
-        "yearly": "Setiap tahun"
-      },
       "paidFor": {
         "title": "Dibayar oleh",
         "description": "Pilih untuk siapa biaya tersebut dibayarkan."

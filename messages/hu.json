@@ -185,15 +185,6 @@
         "placeholder": "Válassz egy résztvevőt",
         "description": "Válaszd ki a résztvevőt, aki a kiadást fizette."
       },
-      "recurrenceRule": {
-        "label": "Kiadás ismétlődése",
-        "description": "Válaszd ki, milyen gyakran ismétlődjön a kiadás.",
-        "none": "Soha",
-        "daily": "Naponta",
-        "weekly": "Hetente",
-        "monthly": "Havonta",
-        "yearly": "Évente"
-      },
       "paidFor": {
         "description": "Válasz ki, kinek a részére fizették ki a kadást.",
         "title": "Részére:"

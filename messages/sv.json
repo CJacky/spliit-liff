@@ -179,15 +179,6 @@
         "placeholder": "Välj en deltagare",
         "description": "Välj den deltagare som betalade kostnaden."
       },
-      "recurrenceRule": {
-        "label": "Utgiftsåterkommande",
-        "description": "Välj hur ofta utgiften ska upprepas.",
-        "none": "Ingen",
-        "daily": "Dagligen",
-        "weekly": "Veckovis",
-        "monthly": "Månadsvis",
-        "yearly": "Årsvis"
-      },
       "paidFor": {
         "title": "Betalat för",
         "description": "Välj vem utgiften betalades för."

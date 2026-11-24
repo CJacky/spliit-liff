@@ -198,15 +198,6 @@
         "description": "Sélectionnez le participant qui a réglé la dépense.",
         "placeholder": "Sélectionner un participant"
       },
-      "recurrenceRule": {
-        "label": "Récurrence de la dépense",
-        "description": "Sélectionnez la fréquence de répétition de la dépense.",
-        "none": "Aucune",
-        "daily": "Quotidienne",
-        "weekly": "Hebdomadaire",
-        "monthly": "Mensuelle",
-        "yearly": "Annuelle"
-      },
       "paidFor": {
         "title": "Payé pour",
         "description": "Sélectionnez les participants concernés."
@@ -381,18 +372,6 @@
       "showExpenses": "Afficher les dépenses de {category}",
       "detailsDescription": "Dépenses de cette catégorie pour la période sélectionnée.",
       "detailsEmpty": "Il n'y a aucune dépense dans cette catégorie."
-    },
-    "Recurring": {
-      "title": "Dépenses récurrentes",
-      "description": "Coût estimé des dépenses récurrentes actives du groupe.",
-      "estimatedMonthly": "Coût mensuel estimé",
-      "estimatedYearly": "{amount} par an",
-      "period": {
-        "DAILY": "{count, plural, one {# dépense quotidienne} other {# dépenses quotidiennes}}",
-        "WEEKLY": "{count, plural, one {# dépense hebdomadaire} other {# dépenses hebdomadaires}}",
-        "MONTHLY": "{count, plural, one {# dépense mensuelle} other {# dépenses mensuelles}}",
-        "YEARLY": "{count, plural, one {# dépense annuelle} other {# dépenses annuelles}}"
-      }
     },
     "MonthlySpending": {
       "title": "Dépenses mensuelles",

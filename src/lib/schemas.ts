@@ -1,4 +1,4 @@
-import { RecurrenceRule, SplitMode } from '@/generated/prisma/browser'
+import { SplitMode } from '@/generated/prisma/browser'
 import Decimal from 'decimal.js'
 import * as z from 'zod'
 
@@ -150,7 +150,6 @@ export const expenseFormSchema = z
       .max(100)
       .default([]),
     notes: z.string().max(EXPENSE_NOTES_MAX, 'max5000').optional(),
-    recurrenceRule: z.enum(RecurrenceRule).default('NONE'),
   })
   .superRefine((expense, ctx) => {
     switch (expense.splitMode) {

@@ -204,15 +204,6 @@
       },
       "splitModeDescription": "Selecione como dividir a despesa.",
       "attachDescription": "Veja e anexe recibos à despesa.",
-      "recurrenceRule": {
-        "label": "Recorrência da Despesa",
-        "description": "Selecione a frequência com que a despesa deve se repetir.",
-        "none": "Nenhuma",
-        "daily": "Diariamente",
-        "weekly": "Semanalmente",
-        "monthly": "Mensalmente",
-        "yearly": "Anualmente"
-      },
       "currencyField": {
         "label": "Moeda da despesa",
         "description": "A moeda em que a despesa foi paga."
@@ -381,18 +372,6 @@
       "showExpenses": "Mostrar os gastos de {category}",
       "detailsDescription": "Gastos desta categoria no período selecionado.",
       "detailsEmpty": "Não há gastos nesta categoria."
-    },
-    "Recurring": {
-      "title": "Despesas recorrentes",
-      "description": "Custo estimado das despesas recorrentes ativas do grupo.",
-      "estimatedMonthly": "Custo mensal estimado",
-      "estimatedYearly": "{amount} por ano",
-      "period": {
-        "DAILY": "{count, plural, one {# despesa diária} other {# despesas diárias}}",
-        "WEEKLY": "{count, plural, one {# despesa semanal} other {# despesas semanais}}",
-        "MONTHLY": "{count, plural, one {# despesa mensal} other {# despesas mensais}}",
-        "YEARLY": "{count, plural, one {# despesa anual} other {# despesas anuais}}"
-      }
     },
     "MonthlySpending": {
       "title": "Gastos mensais"

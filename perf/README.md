@@ -123,16 +123,12 @@ not meaningfully comparable.
 ## Determinism
 
 The seeder is the reason any of this works. It uses a fixed PRNG seed and fixed
-timestamps, and two properties matter enough to call out:
+timestamps, and one property matters enough to call out:
 
 - Every expense has a unique `createdAt`, so the list's
   `[{expenseDate: desc}, {createdAt: desc}]` sort is a total order. Without
   that, tied rows could come back in either order and the byte counts would
   flap.
-- Nothing recurs. `getGroupExpenses` calls `createRecurringExpenses()` on every
-  read, which _writes_ when a frame is due — during a benchmark that would move
-  both row and query counts between iterations. Every seeded expense is
-  `RecurrenceRule.NONE`, so that pass stays a single constant-cost query.
 
 The harness also checks this at runtime: if a supposedly deterministic value
 changes between iterations of the same step, the run fails rather than averaging

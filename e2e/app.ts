@@ -11,8 +11,6 @@ import {
 
 export type SplitMode = 'EVENLY' | 'BY_SHARES' | 'BY_PERCENTAGE' | 'BY_AMOUNT'
 
-export type Recurrence = 'None' | 'Daily' | 'Weekly' | 'Monthly'
-
 export type GroupTab =
   'Expenses' | 'Balances' | 'Information' | 'Stats' | 'Activity' | 'Settings'
 
@@ -111,8 +109,6 @@ export async function addExpense(
     date?: string
     /** Visible category name, e.g. 'Groceries'. Defaults to General. */
     category?: string
-    /** Visible label: 'None' | 'Daily' | 'Weekly' | 'Monthly'. Defaults to None. */
-    recurrence?: Recurrence
     notes?: string
   },
 ): Promise<void> {
@@ -141,14 +137,6 @@ export async function addExpense(
       page,
       fieldByLabel(page, 'Category').getByRole('combobox'),
       expense.category,
-    )
-  }
-
-  if (expense.recurrence) {
-    await selectRadixOption(
-      page,
-      fieldByLabel(page, 'Expense Recurrence').getByRole('combobox'),
-      expense.recurrence,
     )
   }
 

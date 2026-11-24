@@ -48,11 +48,8 @@ export type Budget = {
   dbQueries?: number
 }
 
-/**
- * Every `getGroupExpenses` call pays for an unscoped `createRecurringExpenses()`
- * pass before its own query -- see src/lib/api.ts. Two operations, not one.
- */
-const EXPENSE_READ_QUERIES = 2
+/** `getGroupExpenses` is a single findMany. */
+const EXPENSE_READ_QUERIES = 1
 
 /** `getGroup` is a single findUnique with an include. */
 const GROUP_READ_QUERIES = 1

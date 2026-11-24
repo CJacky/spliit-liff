@@ -179,15 +179,6 @@
         "placeholder": "Hautatu kide bat",
         "description": "Hautatu gastua ordaindu duen kidea."
       },
-      "recurrenceRule": {
-        "label": "Gastu errepikakorra",
-        "description": "Hautatu gastua zein maiztasunez errepikatu behar den.",
-        "none": "Bat ere ez",
-        "daily": "Egunero",
-        "weekly": "Astero",
-        "monthly": "Hilabetero",
-        "yearly": "Urtero"
-      },
       "paidFor": {
         "title": "Honentzat ordaindu da",
         "description": "Hautatu gastua norentzat ordaindu den."
