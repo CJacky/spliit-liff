@@ -1,5 +1,6 @@
 'use client'
 
+import { forgetGroups } from '@/app/groups/recent-groups-helpers'
 import { useLiff } from '@/components/liff-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +11,6 @@ import {
 } from '@/components/ui/popover'
 import { useToast } from '@/components/ui/use-toast'
 import { Group } from '@/generated/prisma/client'
-import { useActiveUser } from '@/lib/hooks'
 import { trpc } from '@/trpc/client'
 import { Loader2, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -26,7 +26,6 @@ export function DeleteGroupButton({ group }: Props) {
   const utils = trpc.useUtils()
   const t = useTranslations('DeleteGroupButton')
   const { toast } = useToast()
-  const activeUserId = useActiveUser(group.id)
   const { profile } = useLiff()
   const [inputValue, setInputValue] = useState('')
   // Covers the redirect as well as the mutation.
@@ -55,7 +54,6 @@ export function DeleteGroupButton({ group }: Props) {
                 groupId: group.id,
                 groupName: inputValue,
                 lineUserId: profile.userId,
-                participantId: activeUserId ?? undefined,
               })
             } catch {
               toast({
@@ -66,8 +64,10 @@ export function DeleteGroupButton({ group }: Props) {
               setIsSubmitting(false)
               return
             }
+            // The group is gone for good: forget it locally too.
+            forgetGroups([group.id])
             await utils.groups.invalidate()
-            router.push(`/groups/${group.id}`)
+            router.push('/groups')
           }}
         >
           <p>{t('description')}</p>

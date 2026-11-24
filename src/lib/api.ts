@@ -13,6 +13,14 @@ import { ExpenseFormValues, GroupFormValues } from '@/lib/schemas'
 export { randomId }
 
 export async function createGroup(groupFormValues: GroupFormValues) {
+  // Members only join through LINE: the group starts with its creator alone,
+  // linked to their LINE account, and the others join from the group page
+  // (see createParticipantForLineUser).
+  const creator = groupFormValues.participants[0]
+  if (!creator?.lineUserId) {
+    throw new Error('The group creator must be linked to a LINE account')
+  }
+
   return prisma.group.create({
     data: {
       id: randomId(),
@@ -20,15 +28,12 @@ export async function createGroup(groupFormValues: GroupFormValues) {
       information: groupFormValues.information,
       currency: groupFormValues.currency,
       currencyCode: groupFormValues.currencyCode,
-      // The creator is the first participant (the create form always links the current LINE user).
-      creatorLineUserId: groupFormValues.participants[0]?.lineUserId ?? null,
+      creatorLineUserId: creator.lineUserId,
       participants: {
-        createMany: {
-          data: groupFormValues.participants.map(({ name, lineUserId }) => ({
-            id: randomId(),
-            name,
-            lineUserId,
-          })),
+        create: {
+          id: randomId(),
+          name: creator.name,
+          lineUserId: creator.lineUserId,
         },
       },
     },
@@ -133,46 +138,13 @@ export async function deleteExpense(
   })
 }
 
-// Instead of deleting a group and all its data right away, it is scheduled for
-// deletion, and can be restored during this grace period. Once it is over, the
-// group is purged by src/lib/group-deletion.ts.
-const GROUP_DELETION_GRACE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000
-
+// Groups are deleted right away by src/lib/group-deletion.ts. Groups scheduled
+// for deletion by earlier versions (with a 30 days grace period) can still be
+// restored until their deletion date, and are purged by the cron job after it.
 export class NotGroupCreatorError extends Error {
   constructor() {
     super('Only the group creator can delete or restore this group')
   }
-}
-
-export async function scheduleGroupDeletion(
-  groupId: string,
-  groupName: string,
-  lineUserId: string,
-  participantId?: string,
-) {
-  // A single conditional update, so that two concurrent requests cannot both
-  // succeed, nor push the deletion date back.
-  const { count } = await prisma.group.updateMany({
-    where: {
-      id: groupId,
-      name: groupName,
-      deleteAt: null,
-      creatorLineUserId: lineUserId,
-    },
-    data: { deleteAt: new Date(Date.now() + GROUP_DELETION_GRACE_PERIOD_MS) },
-  })
-  if (count === 0) {
-    const group = await getGroup(groupId)
-    if (!group) throw new Error('Invalid group ID')
-    if (group.creatorLineUserId !== lineUserId) throw new NotGroupCreatorError()
-    if (group.deleteAt)
-      throw new Error('Group is already scheduled for deletion')
-    throw new Error('Group name does not match')
-  }
-
-  await logActivity(groupId, ActivityType.SCHEDULE_GROUP_DELETION, {
-    participantId,
-  })
 }
 
 export async function restoreGroup(
@@ -222,6 +194,53 @@ export async function getGroupExpensesParticipants(groupId: string) {
       ...paidFor.map((row) => row.participantId),
     ]),
   )
+}
+
+export class ParticipantHasExpensesError extends Error {
+  constructor() {
+    super('Participants who are part of an expense cannot be removed')
+  }
+}
+
+/**
+ * Removes a participant from a group. Only the group creator can do it, and
+ * neither themselves nor a participant who is part of an expense: deleting a
+ * participant cascades to the expenses they paid.
+ */
+export async function removeParticipant(
+  groupId: string,
+  removedParticipantId: string,
+  lineUserId: string,
+  participantId?: string,
+) {
+  const group = await getGroup(groupId)
+  if (!group) throw new Error('Invalid group ID')
+  if (group.creatorLineUserId !== lineUserId) throw new NotGroupCreatorError()
+
+  const removed = group.participants.find(
+    ({ id }) => id === removedParticipantId,
+  )
+  if (!removed) throw new Error('Participant was not found')
+  if (removed.lineUserId === group.creatorLineUserId) {
+    throw new Error('The group creator cannot be removed')
+  }
+
+  // Checked in the delete itself, so that an expense added concurrently
+  // cannot be cascaded away.
+  const { count } = await prisma.participant.deleteMany({
+    where: {
+      id: removedParticipantId,
+      groupId,
+      expensesPaidBy: { none: {} },
+      expensesPaidFor: { none: {} },
+    },
+  })
+  if (count === 0) throw new ParticipantHasExpensesError()
+
+  await logActivity(groupId, ActivityType.UPDATE_GROUP, {
+    participantId,
+    data: removed.name,
+  })
 }
 
 /** All groups where the current LINE user is linked to a participant ("my groups" comes from the database). */
@@ -399,43 +418,21 @@ export async function updateGroup(
   const existingGroup = await getGroup(groupId)
   if (!existingGroup) throw new Error('Invalid group ID')
 
-  const removedParticipants = existingGroup.participants.filter(
-    (p) => !groupFormValues.participants.some((p2) => p2.id === p.id),
-  )
-  if (removedParticipants.some((p) => p.lineUserId)) {
-    throw new Error('Participants linked to a LINE account cannot be removed')
-  }
-
-  await logActivity(groupId, ActivityType.UPDATE_GROUP, { participantId })
-
-  return prisma.group.update({
+  // Members only join through LINE (see createParticipantForLineUser), and can
+  // be neither renamed nor removed, so the participants sent by the form are
+  // ignored: deleting one would also cascade to the expenses they paid.
+  const updatedGroup = await prisma.group.update({
     where: { id: groupId },
     data: {
       name: groupFormValues.name,
       information: groupFormValues.information,
       currency: groupFormValues.currency,
       currencyCode: groupFormValues.currencyCode,
-      participants: {
-        deleteMany: removedParticipants.map(({ id }) => ({ id })),
-        updateMany: groupFormValues.participants
-          .filter((participant) => participant.id !== undefined)
-          .map((participant) => ({
-            where: { id: participant.id },
-            // LINE links can only be created via claim/createLineParticipant;
-            // editing the group cannot change or remove them.
-            data: { name: participant.name },
-          })),
-        createMany: {
-          data: groupFormValues.participants
-            .filter((participant) => participant.id === undefined)
-            .map((participant) => ({
-              id: randomId(),
-              name: participant.name,
-            })),
-        },
-      },
     },
   })
+
+  await logActivity(groupId, ActivityType.UPDATE_GROUP, { participantId })
+  return updatedGroup
 }
 
 export async function getGroup(groupId: string) {
@@ -443,36 +440,6 @@ export async function getGroup(groupId: string) {
     where: { id: groupId },
     include: { participants: true },
   })
-}
-
-export async function claimParticipantForLineUser(
-  groupId: string,
-  participantId: string,
-  lineUserId: string,
-) {
-  const existingBinding = await prisma.participant.findFirst({
-    where: { groupId, lineUserId },
-    select: { id: true },
-  })
-  if (existingBinding && existingBinding.id !== participantId) {
-    throw new Error(
-      'This LINE account is already linked to another participant',
-    )
-  }
-
-  const { count } = await prisma.participant.updateMany({
-    where: {
-      id: participantId,
-      groupId,
-      OR: [{ lineUserId: null }, { lineUserId }],
-    },
-    data: { lineUserId },
-  })
-  if (count === 0) {
-    throw new Error('Participant was not found or is already linked')
-  }
-
-  return prisma.participant.findUniqueOrThrow({ where: { id: participantId } })
 }
 
 export async function createParticipantForLineUser(

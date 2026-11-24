@@ -1,3 +1,4 @@
+import { getGroup, NotGroupCreatorError } from '@/lib/api'
 import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
 import { getUploadKeyFromUrl } from '@/lib/uploaded-image-url'
@@ -28,7 +29,43 @@ function getS3Client() {
 }
 
 /**
- * Permanently deletes every group whose deletion grace period has ended, with
+ * Permanently deletes a group right away, with all its data and uploaded
+ * documents. Only its creator can delete it, and only by confirming its name.
+ */
+export async function deleteGroup(
+  groupId: string,
+  groupName: string,
+  lineUserId: string,
+) {
+  const now = new Date()
+  // Claim the group with a single conditional update first, so that two
+  // concurrent requests cannot both proceed. Should the purge below fail, the
+  // group is left past its deletion date, and the cron job (if scheduled)
+  // retries it.
+  const { count } = await prisma.group.updateMany({
+    where: {
+      id: groupId,
+      name: groupName,
+      deleteAt: null,
+      creatorLineUserId: lineUserId,
+    },
+    data: { deleteAt: now },
+  })
+  if (count === 0) {
+    const group = await getGroup(groupId)
+    if (!group) throw new Error('Invalid group ID')
+    if (group.creatorLineUserId !== lineUserId) throw new NotGroupCreatorError()
+    if (group.deleteAt)
+      throw new Error('Group is already scheduled for deletion')
+    throw new Error('Group name does not match')
+  }
+
+  await purgeGroup(groupId, now)
+}
+
+/**
+ * Permanently deletes every group whose deletion date has passed (scheduled
+ * by earlier versions, or whose immediate deletion failed), with
  * all its data and uploaded documents. A group that fails is left in place, so
  * the next run retries it.
  */

@@ -72,10 +72,11 @@ describe('ENABLE_GROUP_DELETION', () => {
     ).toBe(false)
   })
 
-  it('requires CRON_SECRET, as groups are only purged by the cron job', () => {
-    expect(() =>
-      loadEnv({ ENABLE_GROUP_DELETION: 'true', CRON_SECRET: '' }),
-    ).toThrow(/CRON_SECRET/)
+  it('does not require CRON_SECRET, as groups are deleted right away', () => {
+    expect(
+      loadEnv({ ENABLE_GROUP_DELETION: 'true', CRON_SECRET: '' })
+        .ENABLE_GROUP_DELETION,
+    ).toBe(true)
     expect(
       loadEnv({ ENABLE_GROUP_DELETION: 'true', CRON_SECRET: 's3cret' })
         .ENABLE_GROUP_DELETION,

@@ -21,12 +21,11 @@ export function LineParticipantDialog() {
   const { toast } = useToast()
   const utils = trpc.useUtils()
   const [open, setOpen] = useState(false)
-  const claim = trpc.groups.claimLineParticipant.useMutation()
   const create = trpc.groups.createLineParticipant.useMutation()
 
   const group = currentGroup.group
   const groupId = currentGroup.groupId
-  const isPending = claim.isPending || create.isPending
+  const isPending = create.isPending
 
   useEffect(() => {
     if (!isReady || !profile || !group) return
@@ -54,7 +53,7 @@ export function LineParticipantDialog() {
   const showError = (error: unknown) => {
     toast({
       description:
-        error instanceof Error ? error.message : '無法綁定 LINE 身分，請稍後再試。',
+        error instanceof Error ? error.message : '無法加入群組，請稍後再試。',
       variant: 'destructive',
     })
   }
@@ -63,38 +62,14 @@ export function LineParticipantDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>選擇你在這個群組中的身分</DialogTitle>
+          <DialogTitle>加入這個群組</DialogTitle>
           <DialogDescription>
-            你好，{profile.displayName}。你可以認領尚未綁定 LINE 的成員，或建立新成員。
+            你好，{profile.displayName}。成員只能透過 LINE 加入，加入後會以你的
+            LINE 名稱顯示。
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
-          {group.participants
-            .filter(({ lineUserId }) => !lineUserId)
-            .map((participant) => (
-              <Button
-                key={participant.id}
-                type="button"
-                variant="outline"
-                disabled={isPending}
-                onClick={async () => {
-                  try {
-                    const claimed = await claim.mutateAsync({
-                      groupId,
-                      participantId: participant.id,
-                      lineUserId: profile.userId,
-                    })
-                    finish(claimed.id)
-                  } catch (error) {
-                    showError(error)
-                  }
-                }}
-              >
-                認領「{participant.name}」
-              </Button>
-            ))}
-
           <Button
             type="button"
             disabled={isPending}
@@ -111,7 +86,7 @@ export function LineParticipantDialog() {
               }
             }}
           >
-            以「{profile.displayName}」建立新成員
+            以「{profile.displayName}」加入
           </Button>
         </div>
       </DialogContent>

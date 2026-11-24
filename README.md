@@ -242,19 +242,19 @@ S3_UPLOAD_ENDPOINT=http://localhost:9000
 
 ### Group deletion
 
-You can let users delete their groups. Deleting a group only schedules it for
-deletion: it can be restored for 30 days. Groups whose grace period has ended
-are then permanently deleted, along with their uploaded documents, by
-`GET /api/cron/purge-deleted-groups`, which has to be called on a schedule
-(daily is enough). Without that scheduled call, nothing is ever deleted, which
-is why the feature is disabled by default.
-
-To enable it, set both variables below, then schedule the call:
+You can let users delete their groups. Only the creator of a group can delete
+it, after typing its name to confirm. The group is then permanently deleted
+right away, along with its uploaded documents. The feature is disabled by
+default; to enable it:
 
 ```.env
 ENABLE_GROUP_DELETION=true
-CRON_SECRET=a-long-random-string
 ```
+
+Optionally, set `CRON_SECRET` and call `GET /api/cron/purge-deleted-groups` on
+a schedule (daily is enough). It retries deletions that failed midway (e.g. an
+S3 error), and purges groups scheduled for deletion by earlier versions, which
+used a 30 days grace period:
 
 ```sh
 curl -H "Authorization: Bearer $CRON_SECRET" https://your-instance/api/cron/purge-deleted-groups
@@ -264,11 +264,6 @@ On Vercel, `vercel.json` already schedules this call daily as a
 [cron job](https://vercel.com/docs/cron-jobs), which sends the header
 automatically. The response lists the purged groups; it has a 500 status when
 some failed, in which case they are retried on the next call.
-
-Once its deletion date has passed, a group can no longer be restored, even if
-it has not been purged yet. If you disable the feature later, groups that were
-already scheduled can still be restored, and are still purged as long as the
-call keeps being made.
 
 If expense documents are enabled, the S3 credentials also need the
 `s3:DeleteObject` permission on the bucket.

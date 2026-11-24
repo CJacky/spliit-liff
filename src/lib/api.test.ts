@@ -1,13 +1,22 @@
-import { getGroupExpenses, updateExpense } from './api'
+import {
+  createGroup,
+  getGroupExpenses,
+  NotGroupCreatorError,
+  ParticipantHasExpensesError,
+  removeParticipant,
+  updateExpense,
+  updateGroup,
+} from './api'
 import { prisma } from './prisma'
-import { ExpenseFormValues } from './schemas'
+import { ExpenseFormValues, GroupFormValues } from './schemas'
 
 jest.mock('./prisma', () => ({
   prisma: {
     $transaction: jest.fn(),
     activity: { create: jest.fn() },
+    participant: { deleteMany: jest.fn() },
     expense: { findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-    group: { findUnique: jest.fn() },
+    group: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     recurringExpenseLink: { findMany: jest.fn() },
   },
 }))
@@ -314,5 +323,140 @@ describe('updateExpense', () => {
       nextExpenseDate: new Date(Date.UTC(2025, 0, 22)),
       anchorDay: null,
     })
+  })
+})
+
+describe('createGroup', () => {
+  const formValues = (
+    participants: GroupFormValues['participants'],
+  ): GroupFormValues => ({
+    name: 'Trip',
+    information: '',
+    currency: '$',
+    currencyCode: 'USD',
+    participants,
+  })
+
+  beforeEach(() => jest.clearAllMocks())
+
+  it('only creates the creator, linked to their LINE account', async () => {
+    await createGroup(
+      formValues([
+        { name: 'Alice', lineUserId: 'line-alice' },
+        { name: 'Bob' },
+      ]),
+    )
+
+    expect(prisma.group.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          creatorLineUserId: 'line-alice',
+          participants: {
+            create: expect.objectContaining({
+              name: 'Alice',
+              lineUserId: 'line-alice',
+            }),
+          },
+        }),
+      }),
+    )
+  })
+
+  it('refuses a creator who is not linked to LINE', async () => {
+    await expect(createGroup(formValues([{ name: 'Alice' }]))).rejects.toThrow(
+      /LINE/,
+    )
+    expect(prisma.group.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('updateGroup', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.mocked(prisma.group.findUnique).mockResolvedValue({
+      id: 'group-1',
+      participants: [{ id: 'alice', name: 'Alice', lineUserId: 'line-alice' }],
+    } as any)
+  })
+
+  it('ignores the participants, which only join through LINE', async () => {
+    await updateGroup('group-1', {
+      name: 'Renamed trip',
+      information: '',
+      currency: '$',
+      currencyCode: 'USD',
+      // Alice removed, Mallory added: neither must reach the database.
+      participants: [{ name: 'Mallory' }],
+    })
+
+    expect(prisma.group.update).toHaveBeenCalledWith({
+      where: { id: 'group-1' },
+      data: {
+        name: 'Renamed trip',
+        information: '',
+        currency: '$',
+        currencyCode: 'USD',
+      },
+    })
+    expect(prisma.activity.create).toHaveBeenCalled()
+  })
+})
+
+describe('removeParticipant', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.mocked(prisma.group.findUnique).mockResolvedValue({
+      id: 'group-1',
+      creatorLineUserId: 'line-alice',
+      participants: [
+        { id: 'alice', name: 'Alice', lineUserId: 'line-alice' },
+        { id: 'bob', name: 'Bob', lineUserId: 'line-bob' },
+      ],
+    } as any)
+    jest.mocked(prisma.participant.deleteMany).mockResolvedValue({ count: 1 })
+  })
+
+  it('lets the creator remove a participant without expenses', async () => {
+    await removeParticipant('group-1', 'bob', 'line-alice', 'alice')
+
+    expect(prisma.participant.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: 'bob',
+        groupId: 'group-1',
+        expensesPaidBy: { none: {} },
+        expensesPaidFor: { none: {} },
+      },
+    })
+    expect(prisma.activity.create).toHaveBeenCalled()
+  })
+
+  it('refuses anyone but the creator', async () => {
+    await expect(
+      removeParticipant('group-1', 'alice', 'line-bob'),
+    ).rejects.toThrow(NotGroupCreatorError)
+    expect(prisma.participant.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses to remove the creator', async () => {
+    await expect(
+      removeParticipant('group-1', 'alice', 'line-alice'),
+    ).rejects.toThrow(/creator/)
+    expect(prisma.participant.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses a participant who is part of an expense', async () => {
+    jest.mocked(prisma.participant.deleteMany).mockResolvedValue({ count: 0 })
+
+    await expect(
+      removeParticipant('group-1', 'bob', 'line-alice'),
+    ).rejects.toThrow(ParticipantHasExpensesError)
+    expect(prisma.activity.create).not.toHaveBeenCalled()
+  })
+
+  it('refuses a participant of another group', async () => {
+    await expect(
+      removeParticipant('group-1', 'mallory', 'line-alice'),
+    ).rejects.toThrow(/not found/)
+    expect(prisma.participant.deleteMany).not.toHaveBeenCalled()
   })
 })

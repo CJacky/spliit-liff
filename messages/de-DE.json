@@ -145,12 +145,12 @@
       "cancel": "Abbrechen",
       "Delete": {
         "title": "Gruppe löschen?",
-        "description": "Das Löschen einer Gruppe führt zu einer 30-tägigen Deaktivierungsphase, nach deren Ablauf alle Daten endgültig gelöscht werden und nicht mehr wiederhergestellt werden können."
+        "description": "Das Löschen einer Gruppe löscht sofort alle Daten endgültig. Dies kann nicht rückgängig gemacht werden."
       }
     },
     "Delete": {
       "title": "Gruppe löschen",
-      "description": "Dies führt zu einer 30-tägigen Deaktivierungsphase, nach deren Ablauf alle Daten endgültig gelöscht werden und nicht mehr wiederhergestellt werden können."
+      "description": "Dadurch werden alle Daten sofort endgültig gelöscht. Dies kann nicht rückgängig gemacht werden."
     },
     "CurrencyCodeField": {
       "label": "Hauptwährung",

@@ -77,8 +77,7 @@ const envSchema = z
     S3_UPLOAD_BUCKET: z.string().optional(),
     S3_UPLOAD_REGION: z.string().optional(),
     S3_UPLOAD_ENDPOINT: z.string().optional(),
-    // Lets users delete a group, after a grace period. Requires CRON_SECRET, as
-    // groups are only purged by a scheduled call to /api/cron.
+    // Lets the creator of a group delete it, permanently and right away.
     ENABLE_GROUP_DELETION: z.preprocess(
       interpretEnvVarAsBool,
       z.boolean().default(false),
@@ -190,13 +189,6 @@ const envSchema = z
         code: ZodIssueCode.custom,
         message:
           'If ENABLE_EXPENSE_DOCUMENTS is set, then S3_* must be set too',
-      })
-    }
-    if (env.ENABLE_GROUP_DELETION && !env.CRON_SECRET) {
-      ctx.addIssue({
-        code: ZodIssueCode.custom,
-        message:
-          'If ENABLE_GROUP_DELETION is set, then CRON_SECRET must be set too, and /api/cron/purge-deleted-groups called on a schedule',
       })
     }
     if (

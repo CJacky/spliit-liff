@@ -134,7 +134,7 @@
     },
     "Participants": {
       "title": "Participants",
-      "description": "Enter the name for each participant.",
+      "description": "Participants join the group through LINE, under their LINE name.",
       "protectedParticipant": "This participant is part of expenses, and can not be removed.",
       "new": "New",
       "add": "Add participant",
@@ -159,7 +159,7 @@
     },
     "Delete": {
       "title": "Delete group",
-      "description": "Deleting a group will result in a 30 days deactivation period, after which all data will be permanently deleted and unrecoverable."
+      "description": "Deleting a group permanently deletes all its data right away. This cannot be undone."
     }
   },
   "DeleteGroupButton": {
