@@ -17,6 +17,7 @@ import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useCurrentGroup } from '../current-group-context'
+import { useGroupMembership } from '../group-membership'
 
 export default function GroupExpensesPageClient({
   enableReceiptExtract,
@@ -25,6 +26,7 @@ export default function GroupExpensesPageClient({
 }) {
   const t = useTranslations('Expenses')
   const { groupId } = useCurrentGroup()
+  const { isMember, guardClick } = useGroupMembership()
 
   return (
     <>
@@ -37,11 +39,13 @@ export default function GroupExpensesPageClient({
           </CardHeader>
           <CardHeader className="p-4 sm:p-6 flex flex-row space-y-0 gap-2">
             <ExportButton groupId={groupId} />
-            {enableReceiptExtract && <CreateFromReceiptButton />}
+            {/* Members only: it records an expense right away. */}
+            {enableReceiptExtract && isMember && <CreateFromReceiptButton />}
             <Button asChild size="icon">
               <Link
                 href={`/groups/${groupId}/expenses/create`}
                 title={t('create')}
+                onClick={guardClick}
               >
                 <Plus className="w-4 h-4" />
               </Link>

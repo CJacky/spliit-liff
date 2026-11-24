@@ -74,31 +74,3 @@ test('pre-fills "Paid by" with the active user', async ({ page }) => {
   await page.goto(`/groups/${groupId}/expenses/create`)
   await expect(page.getByTestId('paid-by')).toContainText('Carol')
 })
-
-test('lets you decline to pick anyone', async ({ page }) => {
-  const groupId = await createGroup(page, {
-    name: `E2E ActiveUserNobody ${uniqueSuffix()}`,
-    participants: ['Alice', 'Bob'],
-  })
-
-  await addExpense(page, groupId, {
-    title: 'Taxi',
-    amount: '20',
-    paidBy: 'Alice',
-  })
-
-  await forgetActiveUser(page)
-  await page.goto(`/groups/${groupId}/expenses`)
-
-  const dialog = page.getByRole('dialog')
-  // "I don't want to select anyone" -- curly apostrophe in the source string.
-  await dialog.getByText(/don.t want to select anyone/).click()
-  await dialog.getByRole('button', { name: 'Save changes' }).click()
-  await expect(dialog).toBeHidden()
-
-  // With nobody selected there is no personalised balance on the card...
-  await expect(expenseCard(page, 'Taxi')).not.toContainText('Your balance:')
-  // ...and the dialog does not come back.
-  await page.reload()
-  await expect(page.getByRole('dialog')).toBeHidden()
-})

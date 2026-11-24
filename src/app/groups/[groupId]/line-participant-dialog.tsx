@@ -13,19 +13,25 @@ import {
 import { useToast } from '@/components/ui/use-toast'
 import { setActiveUserForGroup } from '@/lib/hooks'
 import { trpc } from '@/trpc/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { useGroupMembership } from './group-membership'
 
 export function LineParticipantDialog() {
   const currentGroup = useCurrentGroup()
   const { isReady, profile } = useLiff()
   const { toast } = useToast()
   const utils = trpc.useUtils()
-  const [open, setOpen] = useState(false)
+  // Shared, so that members-only actions can open it too (see group-membership).
+  const { isJoinDialogOpen: open, setJoinDialogOpen: setOpen } =
+    useGroupMembership()
   const create = trpc.groups.createLineParticipant.useMutation()
 
   const group = currentGroup.group
   const groupId = currentGroup.groupId
   const isPending = create.isPending
+  // Non-members may browse the group: offer to join once per visit, rather
+  // than every time the group is refetched.
+  const hasOfferedToJoin = useRef(false)
 
   useEffect(() => {
     if (!isReady || !profile || !group) return
@@ -34,20 +40,30 @@ export function LineParticipantDialog() {
       ({ lineUserId }) => lineUserId === profile.userId,
     )
     if (participant) {
-      setActiveUserForGroup(groupId, participant.id)
+      // Default to the LINE-linked participant. Only the group creator can
+      // pick another one by hand in the group settings (temporarily allowed
+      // again), which is kept.
+      const storedActiveUserId = localStorage.getItem(`${groupId}-activeUser`)
+      const keepStored =
+        group.creatorLineUserId === profile.userId &&
+        group.participants.some(({ id }) => id === storedActiveUserId)
+      if (!keepStored) setActiveUserForGroup(groupId, participant.id)
       setOpen(false)
       return
     }
 
+    if (hasOfferedToJoin.current) return
+    hasOfferedToJoin.current = true
     setOpen(true)
-  }, [group, groupId, isReady, profile])
+  }, [group, groupId, isReady, profile, setOpen])
 
   if (!isReady || !profile || !group) return null
 
   const finish = (participantId: string) => {
     setActiveUserForGroup(groupId, participantId)
     setOpen(false)
-    void utils.groups.get.invalidate({ groupId })
+    // Also refreshes the group details used by the group settings.
+    void utils.groups.invalidate()
   }
 
   const showError = (error: unknown) => {
@@ -64,8 +80,8 @@ export function LineParticipantDialog() {
         <DialogHeader>
           <DialogTitle>加入這個群組</DialogTitle>
           <DialogDescription>
-            你好，{profile.displayName}。成員只能透過 LINE 加入，加入後會以你的
-            LINE 名稱顯示。
+            你好，{profile.displayName}
+            。不加入也可以瀏覽，但加入後才能記帳。加入後會以你的 LINE 名稱顯示。
           </DialogDescription>
         </DialogHeader>
 

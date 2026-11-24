@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -19,21 +20,34 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Locale } from '@/i18n/request'
 import { useAnalytics } from '@/lib/analytics/context'
 import { getGroup } from '@/lib/api'
 import { defaultCurrencyList, getCurrency } from '@/lib/currency'
-import { setActiveUserForGroup } from '@/lib/hooks'
+import { setActiveUserForGroup, useActiveUser } from '@/lib/hooks'
 import {
   GROUP_INFORMATION_MAX,
   groupFormSchema,
   GroupFormValues,
 } from '@/lib/schemas'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Save } from 'lucide-react'
+import { Save, Trash2 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { CurrencySelector } from './currency-selector'
 import { Textarea } from './ui/textarea'
@@ -86,29 +100,61 @@ export function GroupForm({
           ],
         },
   })
-  const { fields } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'participants',
     keyName: 'key',
   })
   const sendEvent = useAnalytics()
 
-  // The current user is always the participant linked to the current LINE
-  // account (see LineParticipantDialog); it cannot be changed here.
+  const isCreator =
+    !!profile &&
+    !!group?.creatorLineUserId &&
+    group.creatorLineUserId === profile.userId
+
+  // Only the group creator can add, rename and remove participants, and pick
+  // the current user, by hand (temporarily allowed again). Whoever creates a
+  // group becomes its creator.
+  const canManage = !group || isCreator
+
+  // The participant linked to the current LINE account (see LineParticipantDialog).
   const lineParticipant = profile
     ? group?.participants.find(
         ({ lineUserId }) => lineUserId === profile.userId,
       )
     : undefined
 
-  const isCreator =
-    !!profile &&
-    !!group?.creatorLineUserId &&
-    group.creatorLineUserId === profile.userId
+  // The creator's pick defaults to the stored one, which LineParticipantDialog
+  // initializes to the LINE-linked participant.
+  const storedActiveUserId = useActiveUser(group?.id)
+  const [activeUser, setActiveUser] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!group) return
+    setActiveUser(
+      // There is no "none" option: fall back to the LINE-linked participant,
+      // or else the first one.
+      group.participants.find(({ id }) => id === storedActiveUserId)?.name ??
+        lineParticipant?.name ??
+        group.participants[0]?.name ??
+        null,
+    )
+  }, [group, storedActiveUserId, lineParticipant?.name])
+
+  // Anyone else is always the LINE-linked participant.
+  const activeParticipantId = isCreator
+    ? group?.participants.find((p) => p.name === activeUser)?.id
+    : lineParticipant?.id
 
   const updateActiveUser = () => {
     if (group?.id) {
-      if (lineParticipant) setActiveUserForGroup(group.id, lineParticipant.id)
+      if (!isCreator) {
+        if (lineParticipant) setActiveUserForGroup(group.id, lineParticipant.id)
+        return
+      }
+      if (activeParticipantId) {
+        setActiveUserForGroup(group.id, activeParticipantId)
+      }
     } else {
       // When creating a group, the current user is always the LINE-linked creator.
       localStorage.setItem(
@@ -116,6 +162,15 @@ export function GroupForm({
         form.getValues('participants.0.name'),
       )
     }
+  }
+
+  // Removing a LINE-linked participant is saved right away (see
+  // RemoveParticipantButton), so drop them from the form too.
+  const removeField = (participantId: string) => {
+    const index = form
+      .getValues('participants')
+      .findIndex(({ id }) => id === participantId)
+    if (index >= 0) remove(index)
   }
 
   return (
@@ -142,7 +197,7 @@ export function GroupForm({
                 }
               : values
 
-          await onSubmit(submittedValues, lineParticipant?.id)
+          await onSubmit(submittedValues, activeParticipantId)
         })}
       >
         <Card className="mb-4">
@@ -262,35 +317,98 @@ export function GroupForm({
             <CardDescription>{t('Participants.description')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Members only join through LINE (see LineParticipantDialog), so
-                the list is display only, like the current user field. Only the
-                group creator can remove members, other than themselves. The
-                list comes from the group itself when editing, so that it
-                reflects removals right away. */}
+            {/* Participants not linked to LINE can be added, renamed and
+                removed by hand (temporarily allowed again), and are saved with
+                the form. Those linked to LINE keep their LINE name, and only
+                the group creator can remove them, other than themselves. */}
             <ul className="flex flex-col gap-2">
-              {(group?.participants ?? fields).map((item, index) => (
-                <li key={item.id ?? index} className="flex gap-2">
-                  <Input
-                    aria-label={`Participant #${index + 1}`}
-                    className="text-base"
-                    value={item.name}
-                    readOnly
-                    disabled
-                  />
-                  {group &&
-                    isCreator &&
-                    item.id &&
-                    item.lineUserId !== group.creatorLineUserId && (
-                      <RemoveParticipantButton
-                        groupId={group.id}
-                        participant={{ id: item.id, name: item.name }}
-                        hasExpenses={protectedParticipantIds.includes(item.id)}
-                      />
+              {fields.map((item, index) => (
+                <li key={item.key}>
+                  <FormField
+                    control={form.control}
+                    name={`participants.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="sr-only">
+                          Participant #{index + 1}
+                        </FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input
+                              className="text-base"
+                              {...field}
+                              placeholder={t('Participants.new')}
+                              readOnly={!canManage || !!item.lineUserId}
+                              disabled={!canManage || !!item.lineUserId}
+                            />
+                            {!canManage ? null : item.lineUserId ? (
+                              group &&
+                              isCreator &&
+                              item.id &&
+                              item.lineUserId !== group.creatorLineUserId && (
+                                <RemoveParticipantButton
+                                  groupId={group.id}
+                                  participant={{ id: item.id, name: item.name }}
+                                  hasExpenses={protectedParticipantIds.includes(
+                                    item.id,
+                                  )}
+                                  onRemoved={removeField}
+                                />
+                              )
+                            ) : item.id &&
+                              protectedParticipantIds.includes(item.id) ? (
+                              <HoverCard>
+                                <HoverCardTrigger>
+                                  <Button
+                                    variant="ghost"
+                                    type="button"
+                                    size="icon"
+                                    disabled
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive opacity-50" />
+                                  </Button>
+                                </HoverCardTrigger>
+                                <HoverCardContent
+                                  align="end"
+                                  className="text-sm"
+                                >
+                                  {t('Participants.protectedParticipant')}
+                                </HoverCardContent>
+                              </HoverCard>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                className="text-destructive"
+                                onClick={() => remove(index)}
+                                type="button"
+                                size="icon"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
+                  />
                 </li>
               ))}
             </ul>
           </CardContent>
+          {canManage && (
+            <CardFooter>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  append({ name: '' })
+                }}
+                type="button"
+              >
+                {t('Participants.add')}
+              </Button>
+            </CardFooter>
+          )}
         </Card>
 
         {/* When creating a group the current user is always the LINE-linked creator, so hide this setting. */}
@@ -302,25 +420,62 @@ export function GroupForm({
             </CardHeader>
             <CardContent>
               <div className="grid sm:grid-cols-2 gap-4">
-                <FormItem>
-                  <FormLabel>{t('Settings.ActiveUserField.label')}</FormLabel>
-                  <FormControl>
-                    {/* Display only: fixed to the LINE account's name. */}
-                    <Input
-                      className="text-base"
-                      value={
-                        profile?.displayName ??
-                        lineParticipant?.name ??
-                        t('Settings.ActiveUserField.none')
-                      }
-                      readOnly
-                      disabled
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('Settings.ActiveUserField.description')}
-                  </FormDescription>
-                </FormItem>
+                {!isCreator ? (
+                  <FormItem>
+                    <FormLabel>{t('Settings.ActiveUserField.label')}</FormLabel>
+                    <FormControl>
+                      {/* Display only: fixed to the LINE-linked participant. */}
+                      <Input
+                        className="text-base"
+                        value={lineParticipant?.name ?? ''}
+                        readOnly
+                        disabled
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('Settings.ActiveUserField.description')}
+                    </FormDescription>
+                  </FormItem>
+                ) : (
+                  activeUser !== null && (
+                    <FormItem>
+                      <FormLabel>
+                        {t('Settings.ActiveUserField.label')}
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={(value) => {
+                            // Radix's hidden native <select> reports '' when
+                            // the value changes before its option is
+                            // registered (here, once the stored user is read);
+                            // no item has an empty value, so ignore it.
+                            if (value) setActiveUser(value)
+                          }}
+                          value={activeUser}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t(
+                                'Settings.ActiveUserField.placeholder',
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {/* Only saved participants: a new one has no ID yet. */}
+                            {group.participants.map(({ name }) => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormDescription>
+                        {t('Settings.ActiveUserField.description')}
+                      </FormDescription>
+                    </FormItem>
+                  )
+                )}
               </div>
             </CardContent>
           </Card>

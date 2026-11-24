@@ -5,6 +5,7 @@ import { randomId } from '@/lib/random'
 import { trpc } from '@/trpc/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { MembersOnly } from '../group-membership'
 import { ExpenseForm } from './expense-form'
 
 export function CreateExpenseForm({
@@ -35,30 +36,32 @@ export function CreateExpenseForm({
   if (!group || !categories) return null
 
   return (
-    <ExpenseForm
-      group={group}
-      categories={categories}
-      expenseId={expenseId}
-      onSubmit={async (expenseFormValues, participantId) => {
-        try {
-          await createExpenseMutateAsync({
-            groupId,
-            expenseFormValues,
-            participantId,
-            expenseId,
-          })
-        } catch (error) {
-          // The server may have created the expense and only the response
-          // been lost; retrying with the same id would then collide with it
-          // rather than create anything.
-          setExpenseId(randomId())
-          throw error
-        }
-        utils.groups.expenses.invalidate()
-        utils.groups.stats.invalidate()
-        router.push(`/groups/${group.id}`)
-      }}
-      runtimeFeatureFlags={runtimeFeatureFlags}
-    />
+    <MembersOnly description="沒有加入的人可以瀏覽群組，但不能新增消費。">
+      <ExpenseForm
+        group={group}
+        categories={categories}
+        expenseId={expenseId}
+        onSubmit={async (expenseFormValues, participantId) => {
+          try {
+            await createExpenseMutateAsync({
+              groupId,
+              expenseFormValues,
+              participantId,
+              expenseId,
+            })
+          } catch (error) {
+            // The server may have created the expense and only the response
+            // been lost; retrying with the same id would then collide with it
+            // rather than create anything.
+            setExpenseId(randomId())
+            throw error
+          }
+          utils.groups.expenses.invalidate()
+          utils.groups.stats.invalidate()
+          router.push(`/groups/${group.id}`)
+        }}
+        runtimeFeatureFlags={runtimeFeatureFlags}
+      />
+    </MembersOnly>
   )
 }

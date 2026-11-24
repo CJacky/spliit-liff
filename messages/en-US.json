@@ -134,7 +134,7 @@
     },
     "Participants": {
       "title": "Participants",
-      "description": "Participants join the group through LINE, under their LINE name.",
+      "description": "Enter the name for each participant. Participants who join through LINE keep their LINE name.",
       "protectedParticipant": "This participant is part of expenses, and can not be removed.",
       "new": "New",
       "add": "Add participant",

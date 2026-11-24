@@ -105,7 +105,7 @@
     },
     "Participants": {
       "title": "群組成員",
-      "description": "成員透過 LINE 加入群組，名稱為 LINE 名稱。",
+      "description": "輸入每位成員的名稱。透過 LINE 加入的成員會使用 LINE 名稱。",
       "protectedParticipant": "此成員已有登記支出，無法刪除。",
       "new": "新增",
       "add": "新增群組成員",

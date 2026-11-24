@@ -5,6 +5,7 @@ import { Currency } from '@/lib/currency'
 import { formatCurrency } from '@/lib/utils'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { useGroupMembership } from './group-membership'
 
 type Props = {
   reimbursements: Reimbursement[]
@@ -21,6 +22,7 @@ export function ReimbursementList({
 }: Props) {
   const locale = useLocale()
   const t = useTranslations('Balances.Reimbursements')
+  const { guardClick } = useGroupMembership()
   if (reimbursements.length === 0) {
     return <p className="text-sm pb-6">{t('noImbursements')}</p>
   }
@@ -47,6 +49,7 @@ export function ReimbursementList({
             <Button variant="link" asChild className="-mx-4 -my-3">
               <Link
                 href={`/groups/${groupId}/expenses/create?reimbursement=yes&from=${reimbursement.from}&to=${reimbursement.to}&amount=${reimbursement.amount}`}
+                onClick={guardClick}
               >
                 {t('markAsPaid')}
               </Link>

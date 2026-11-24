@@ -9,8 +9,14 @@ export const updateGroupProcedure = baseProcedure
       groupId: z.string().min(1),
       groupFormValues: groupFormSchema,
       participantId: z.string().optional(),
+      /** Only the group creator can manage participants by hand. */
+      lineUserId: z.string().min(1).max(255).optional(),
     }),
   )
-  .mutation(async ({ input: { groupId, groupFormValues, participantId } }) => {
-    await updateGroup(groupId, groupFormValues, participantId)
-  })
+  .mutation(
+    async ({
+      input: { groupId, groupFormValues, participantId, lineUserId },
+    }) => {
+      await updateGroup(groupId, groupFormValues, participantId, lineUserId)
+    },
+  )

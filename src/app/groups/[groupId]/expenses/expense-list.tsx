@@ -18,6 +18,7 @@ import { forwardRef, useEffect, useMemo, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { useDebounce } from 'use-debounce'
 import { useCurrentGroup } from '../current-group-context'
+import { useGroupMembership } from '../group-membership'
 
 const PAGE_SIZE = 20
 
@@ -72,6 +73,7 @@ const ExpenseListForSearch = ({
 }) => {
   const utils = trpc.useUtils()
   const { group } = useCurrentGroup()
+  const { guardClick } = useGroupMembership()
 
   useEffect(() => {
     // Until we use tRPC more widely and can invalidate the cache on expense
@@ -119,7 +121,10 @@ const ExpenseListForSearch = ({
       <p className="px-6 text-sm py-6">
         {t('noExpenses')}{' '}
         <Button variant="link" asChild className="-m-4">
-          <Link href={`/groups/${groupId}/expenses/create`}>
+          <Link
+            href={`/groups/${groupId}/expenses/create`}
+            onClick={guardClick}
+          >
             {t('createFirst')}
           </Link>
         </Button>

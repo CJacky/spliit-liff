@@ -13,10 +13,10 @@ import { ExpenseFormValues, GroupFormValues } from '@/lib/schemas'
 export { randomId }
 
 export async function createGroup(groupFormValues: GroupFormValues) {
-  // Members only join through LINE: the group starts with its creator alone,
-  // linked to their LINE account, and the others join from the group page
-  // (see createParticipantForLineUser).
-  const creator = groupFormValues.participants[0]
+  // The creator is the first participant, linked to their LINE account. The
+  // others are added by hand (temporarily allowed again) and are not linked:
+  // LINE accounts only get linked through createParticipantForLineUser.
+  const [creator, ...others] = groupFormValues.participants
   if (!creator?.lineUserId) {
     throw new Error('The group creator must be linked to a LINE account')
   }
@@ -30,11 +30,14 @@ export async function createGroup(groupFormValues: GroupFormValues) {
       currencyCode: groupFormValues.currencyCode,
       creatorLineUserId: creator.lineUserId,
       participants: {
-        create: {
-          id: randomId(),
-          name: creator.name,
-          lineUserId: creator.lineUserId,
-        },
+        create: [
+          {
+            id: randomId(),
+            name: creator.name,
+            lineUserId: creator.lineUserId,
+          },
+          ...others.map(({ name }) => ({ id: randomId(), name })),
+        ],
       },
     },
     include: { participants: true },
@@ -414,21 +417,81 @@ export async function updateGroup(
   groupId: string,
   groupFormValues: GroupFormValues,
   participantId?: string,
+  lineUserId?: string,
 ) {
   const existingGroup = await getGroup(groupId)
   if (!existingGroup) throw new Error('Invalid group ID')
 
-  // Members only join through LINE (see createParticipantForLineUser), and can
-  // be neither renamed nor removed, so the participants sent by the form are
-  // ignored: deleting one would also cascade to the expenses they paid.
-  const updatedGroup = await prisma.group.update({
-    where: { id: groupId },
-    data: {
-      name: groupFormValues.name,
-      information: groupFormValues.information,
-      currency: groupFormValues.currency,
-      currencyCode: groupFormValues.currencyCode,
-    },
+  const groupData = {
+    name: groupFormValues.name,
+    information: groupFormValues.information,
+    currency: groupFormValues.currency,
+    currencyCode: groupFormValues.currencyCode,
+  }
+
+  // Only the group creator can add, rename and remove participants by hand
+  // (temporarily allowed again); for anyone else the participants sent by the
+  // form are ignored.
+  const isCreator =
+    !!lineUserId && existingGroup.creatorLineUserId === lineUserId
+  if (!isCreator) {
+    const updatedGroup = await prisma.group.update({
+      where: { id: groupId },
+      data: groupData,
+    })
+    await logActivity(groupId, ActivityType.UPDATE_GROUP, { participantId })
+    return updatedGroup
+  }
+
+  // Only participants not linked to LINE are managed by hand. Those linked to
+  // LINE keep the name of their LINE account, and are only removed through
+  // removeParticipant: one missing from the form has probably just joined.
+  const removedParticipants = existingGroup.participants.filter(
+    (p) =>
+      !p.lineUserId &&
+      !groupFormValues.participants.some((p2) => p2.id === p.id),
+  )
+
+  const updatedGroup = await prisma.$transaction(async (tx) => {
+    if (removedParticipants.length > 0) {
+      // Checked in the delete itself, so that an expense added concurrently
+      // cannot be cascaded away.
+      const { count } = await tx.participant.deleteMany({
+        where: {
+          id: { in: removedParticipants.map(({ id }) => id) },
+          groupId,
+          lineUserId: null,
+          expensesPaidBy: { none: {} },
+          expensesPaidFor: { none: {} },
+        },
+      })
+      if (count !== removedParticipants.length) {
+        throw new ParticipantHasExpensesError()
+      }
+    }
+
+    return tx.group.update({
+      where: { id: groupId },
+      data: {
+        ...groupData,
+        participants: {
+          updateMany: groupFormValues.participants
+            .filter((participant) => participant.id !== undefined)
+            .map((participant) => ({
+              where: { id: participant.id, lineUserId: null },
+              data: { name: participant.name },
+            })),
+          createMany: {
+            data: groupFormValues.participants
+              .filter((participant) => participant.id === undefined)
+              .map((participant) => ({
+                id: randomId(),
+                name: participant.name,
+              })),
+          },
+        },
+      },
+    })
   })
 
   await logActivity(groupId, ActivityType.UPDATE_GROUP, { participantId })

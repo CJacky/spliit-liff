@@ -23,6 +23,8 @@ type Props = {
   participant: { id: string; name: string }
   /** Participants who are part of an expense cannot be removed. */
   hasExpenses: boolean
+  /** Called once the participant has been removed. */
+  onRemoved?: (participantId: string) => void
 }
 
 /** Lets the group creator remove a participant, right away. */
@@ -30,6 +32,7 @@ export function RemoveParticipantButton({
   groupId,
   participant,
   hasExpenses,
+  onRemoved,
 }: Props) {
   const { mutateAsync } = trpc.groups.removeParticipant.useMutation()
   const utils = trpc.useUtils()
@@ -65,6 +68,7 @@ export function RemoveParticipantButton({
         participantId: activeUserId ?? undefined,
       })
       setOpen(false)
+      onRemoved?.(participant.id)
     } catch {
       toast({
         description: `無法移除「${participant.name}」：可能剛新增了他的消費紀錄，請重新整理頁面後再試。`,

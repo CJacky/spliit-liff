@@ -3,6 +3,7 @@
 import { RuntimeFeatureFlags } from '@/lib/featureFlags'
 import { trpc } from '@/trpc/client'
 import { useRouter } from 'next/navigation'
+import { JoinGroupCard, useGroupMembership } from '../group-membership'
 import { ExpenseForm } from './expense-form'
 
 export function EditExpenseForm({
@@ -33,10 +34,11 @@ export function EditExpenseForm({
 
   const utils = trpc.useUtils()
   const router = useRouter()
+  const { isMember } = useGroupMembership()
 
   if (!group || !categories || !expense) return null
 
-  return (
+  const expenseForm = (
     <ExpenseForm
       group={group}
       expense={expense}
@@ -64,5 +66,15 @@ export function EditExpenseForm({
       }}
       runtimeFeatureFlags={runtimeFeatureFlags}
     />
+  )
+
+  if (isMember) return expenseForm
+
+  // Non-members can still see the expense details, read only.
+  return (
+    <>
+      <JoinGroupCard description="沒有加入的人可以查看消費內容，但不能修改或刪除。" />
+      <fieldset disabled>{expenseForm}</fieldset>
+    </>
   )
 }

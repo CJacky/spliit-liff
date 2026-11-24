@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { PropsWithChildren, useEffect } from 'react'
 import { CurrentGroupProvider } from './current-group-context'
 import { GroupHeader } from './group-header'
+import { GroupMembershipProvider } from './group-membership'
 import { LineParticipantDialog } from './line-participant-dialog'
 import { SaveGroupLocally } from './save-recent-group'
 
@@ -35,19 +36,23 @@ export function GroupLayoutClient({
   if (isLoading) {
     return (
       <CurrentGroupProvider {...props}>
-        <GroupHeader />
-        {children}
+        <GroupMembershipProvider>
+          <GroupHeader />
+          {children}
+        </GroupMembershipProvider>
       </CurrentGroupProvider>
     )
   }
 
   return (
     <CurrentGroupProvider {...props}>
-      <LineParticipantDialog />
-      <GroupHeader />
-      <DeleteGroupNotice />
-      {children}
-      <SaveGroupLocally />
+      <GroupMembershipProvider>
+        <LineParticipantDialog />
+        <GroupHeader />
+        <DeleteGroupNotice />
+        {children}
+        <SaveGroupLocally />
+      </GroupMembershipProvider>
     </CurrentGroupProvider>
   )
 }
